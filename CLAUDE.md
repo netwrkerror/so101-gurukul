@@ -1,0 +1,100 @@
+# so101-gurukul: working agreement
+
+This file is the working agreement between you and me for this repo. Read it at the start of every session and follow it over any default behavior.
+
+## What this repo is
+
+Hands-on physical AI projects on a Seeed Studio SO-ARM101 Pro (leader + follower) using Hugging Face LeRobot. The goal is a portfolio Aakash can explain end to end: data collection, training, evaluation, serving, and observability. Understanding matters more than speed.
+
+Aakash is an experienced ML platform engineer (Python, Kubernetes, Spark, Ray, Prometheus/Grafana) who is new to robotics. Explain robotics concepts; skip explanations of general ML infrastructure.
+
+## How we work
+
+### Plan first
+
+- Before writing or changing code, propose a plan: what you will change, why, which files, and how Aakash can verify it. Then stop and wait for approval.
+- Each project starts from its `projects/<nn-name>/BRIEF.md`. If the brief is missing or unclear, ask before building.
+- Keep changes small: one concept per branch and PR, small enough to read in full.
+- If a request is ambiguous, ask one question instead of guessing.
+- New ideas outside the current brief go into the brief's "Out of scope / later" list, not into the code.
+
+### Who runs what
+
+- Claude writes and edits files, and proposes commands, branch names, commit messages, and PR text.
+- Aakash runs the commands. Do not execute shell commands unless he approves that specific command.
+- Never run anything that moves the arm, powers motors, or writes calibration. Give the command and say what the arm will physically do, so Aakash can clear the workspace and keep a hand near the power switch.
+- Never run `git push`, force operations, or anything that deletes data. Propose them.
+
+### Git conventions
+
+- Branches: `p<nn>/<short-topic>`, for example `p01/record-dataset`.
+- Commits: imperative, one logical change each.
+- PR description sections: What, Why, How to verify, Results (if any), Notes / limitations.
+- Add a dated entry to `DECISIONS.md` whenever a real choice is made (policy, camera placement, hyperparameters, a dropped approach) with the reason.
+
+## Honest results
+
+- Report every success rate with its trial count and conditions (for example "14/20, object within the taped square, overhead camera only").
+- Log failures and negative results in the project's `results/` and in `DECISIONS.md`. Do not drop bad runs.
+- Never describe something as working unless it was run and observed. Say "untested" when it is.
+- Keep evaluation conditions fixed when comparing policies. Flag any comparison that is not like for like.
+- Do not write README or blog claims that the logged results do not support.
+
+## Reproducibility
+
+- The LeRobot version is pinned (see Hardware and environment). Do not upgrade it without a plan and a `DECISIONS.md` entry.
+- LeRobot's CLI and APIs change between releases. Check the installed source or the docs for the pinned version before using an API. Do not rely on memory. If unsure, say so.
+- Every training or eval run has a committed config file and a recorded seed, git commit, dataset ID and revision, and hardware used.
+- Datasets, checkpoints, and run outputs are not committed. They go to the Hugging Face Hub and are referenced by repo ID and revision.
+- One environment definition for the repo, committed. No ad hoc `pip install` without updating it.
+
+## Privacy and secrets
+
+- Tokens and keys live in `.env`, which is gitignored. Never print, log, or commit them. Commit a `.env.example` with names only.
+- No DISH / EchoStar code, data, configs, internal names, or screenshots anywhere in this repo.
+- Before any dataset is made public, remind Aakash to review camera frames for anything identifying in the background (faces, documents, screens, mail, the room).
+- New Hub datasets and models are created private. Making one public is Aakash's explicit decision.
+- `notes.local.md` is private and gitignored. Do not copy its contents into committed files.
+
+## Repo layout
+
+```
+so101-gurukul/
+  CLAUDE.md
+  README.md
+  LICENSE
+  DECISIONS.md          # committed decision log
+  notes.local.md        # private, gitignored
+  .env.example
+  common/               # shared configs, arm IDs, utilities (created when first needed)
+  projects/
+    BRIEF.template.md   # copied to each project's BRIEF.md
+    01-baseline-act/    # BRIEF.md, src/, configs/, results/
+    02-serving-observability/   # created when started
+    03-ray-curation/            # created when started
+```
+
+Naming: the setup is called gurukul. `guru` is the leader arm and `shishya` is the follower. In technical sections of READMEs, configs, and results, say "leader" and "follower" alongside the names.
+
+`.gitignore` must cover: `.env`, `notes.local.md`, datasets, checkpoints, run outputs, caches.
+
+## Hardware and environment
+
+Fill these in after first setup and keep them current.
+
+| Item | Value |
+|---|---|
+| Leader arm (black) | `guru` |
+| Follower arm (white) | `shishya` |
+| LeLab device name | `gurukul` |
+| Calibration file paths (as LeLab wrote them) | TBD |
+| Leader port | TBD |
+| Follower port | TBD |
+| Cameras (name, index, resolution, fps) | TBD |
+| LeRobot version | TBD (pinned) |
+| Python version | TBD |
+| Dev machine | MacBook Pro, M5 Pro (15-core CPU, 16-core GPU), 24 GB unified memory, macOS |
+| Local compute device | `mps` (Apple GPU). No CUDA on this machine: do not propose CUDA-only flags or libraries for local runs |
+| Local use | Teleoperation, recording, ACT training and inference |
+| Cloud use | SmolVLA and larger VLA fine-tunes (provider TBD) |
+| Hugging Face user | TBD |
