@@ -98,3 +98,20 @@ Fill these in after first setup and keep them current.
 | Local use | Teleoperation, recording, ACT training and inference |
 | Cloud use | SmolVLA and larger VLA fine-tunes (provider TBD) |
 | Hugging Face user | TBD |
+
+## Clarifications
+
+These refine the sections above. Where they differ, this section wins.
+
+- Read-only shell commands (`git status`, `git diff`, `git log`, `ls`, searching or reading the installed LeRobot source) do not need approval. All other shell commands do.
+- Docs-only edits need a one-line statement of the change, not a full plan.
+- Local git commands (branch, add, commit, and the rest) are proposed by Claude and run by Aakash.
+- Hub uploads are propose-only and always private.
+- Machine-specific values (ports, camera indexes) live in `common/hardware.local.yaml`, which is gitignored. A committed `common/hardware.example.yaml` shows the keys without real values.
+- `results/` holds committed summaries and failure logs. Raw outputs, videos, and checkpoints go to the Hub.
+- Proposed commit messages do not include the `Co-Authored-By` trailer.
+
+### Open items
+
+- Environment tool: decide after checking what LeLab installed.
+- Which IDs the LeRobot CLI uses to find the calibration files LeLab wrote.
