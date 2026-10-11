@@ -218,3 +218,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# secrets and private notes
+.env
+notes.local.md
+
+# data and run outputs (these live on the Hugging Face Hub)
+data/
+datasets/
+outputs/
+checkpoints/
+wandb/
+*.safetensors
+*.ckpt
+*.pt
+*.mp4
