@@ -55,6 +55,7 @@ Aakash is an experienced ML platform engineer (Python, Kubernetes, Spark, Ray, P
 - Before any dataset is made public, remind Aakash to review camera frames for anything identifying in the background (faces, documents, screens, mail, the room).
 - New Hub datasets and models are created private. Making one public is Aakash's explicit decision.
 - `notes.local.md` is private and gitignored. Do not copy its contents into committed files.
+- Never write absolute home-directory paths into committed files. Use `~` or repo-relative paths. Machine-specific paths go in the gitignored `common/hardware.local.yaml`. Check the staged diff for `/Users/` before proposing any commit.
 
 ## Repo layout
 
