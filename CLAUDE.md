@@ -88,9 +88,11 @@ Fill these in after first setup and keep them current.
 | Leader arm (black) | `guru` |
 | Follower arm (white) | `shishya` |
 | LeLab device name | `gurukul` |
-| Calibration file paths (as LeLab wrote them) | TBD |
-| Leader port | TBD |
-| Follower port | TBD |
+| Leader calibration file (as LeLab wrote it) | `~/.cache/huggingface/lerobot/calibration/teleoperators/so_leader/gurukul.json` |
+| Follower calibration file (as LeLab wrote it) | `~/.cache/huggingface/lerobot/calibration/robots/so_follower/gurukul.json` |
+| Calibration ID for the LeRobot CLI | `gurukul` for both arms: `--teleop.type=so101_leader --teleop.id=gurukul` and `--robot.type=so101_follower --robot.id=gurukul` |
+| Leader port | In `common/hardware.local.yaml` (gitignored) |
+| Follower port | In `common/hardware.local.yaml` (gitignored) |
 | Cameras (name, index, resolution, fps) | TBD |
 | LeRobot version | 0.6.0, git commit `30da8e687a6dfc617fcd94afc367ac7071c376ce` (tag v0.6.0), extras `core-scripts`, `feetech`, `training` |
 | Python version | 3.12 (`>=3.12,<3.13`) |
@@ -115,4 +117,4 @@ These refine the sections above. Where they differ, this section wins.
 
 ### Open items
 
-- Which IDs the LeRobot CLI uses to find the calibration files LeLab wrote.
+- None right now.

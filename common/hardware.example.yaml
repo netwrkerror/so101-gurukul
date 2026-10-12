@@ -1,0 +1,19 @@
+# Template for machine-specific hardware values.
+# Copy to common/hardware.local.yaml (gitignored) and fill in real values there.
+# Keys match the LeRobot CLI flags: --teleop.type / --teleop.id / --teleop.port for the
+# leader, and --robot.type / --robot.id / --robot.port for the follower.
+
+leader:            # guru (black arm)
+  type: so101_leader
+  id: gurukul      # calibration ID, see CLAUDE.md hardware table
+  port: /dev/tty.usbmodemXXXXXXXXXXX   # find with: lerobot-find-port
+
+follower:          # shishya (white arm)
+  type: so101_follower
+  id: gurukul
+  port: /dev/tty.usbmodemXXXXXXXXXXX
+
+# One entry per camera, for example:
+#   front: {type: opencv, index_or_path: 0, width: 640, height: 480, fps: 30}
+# Find indexes with: lerobot-find-cameras
+cameras: {}
