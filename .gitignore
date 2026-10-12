@@ -233,3 +233,4 @@ wandb/
 *.ckpt
 *.pt
 *.mp4
+*hardware.local.yaml

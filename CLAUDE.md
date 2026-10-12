@@ -55,6 +55,7 @@ Aakash is an experienced ML platform engineer (Python, Kubernetes, Spark, Ray, P
 - Before any dataset is made public, remind Aakash to review camera frames for anything identifying in the background (faces, documents, screens, mail, the room).
 - New Hub datasets and models are created private. Making one public is Aakash's explicit decision.
 - `notes.local.md` is private and gitignored. Do not copy its contents into committed files.
+- Never write absolute home-directory paths into committed files. Use `~` or repo-relative paths. Machine-specific paths go in the gitignored `common/hardware.local.yaml`. Check the staged diff for `/Users/` before proposing any commit.
 
 ## Repo layout
 
@@ -91,8 +92,8 @@ Fill these in after first setup and keep them current.
 | Leader port | TBD |
 | Follower port | TBD |
 | Cameras (name, index, resolution, fps) | TBD |
-| LeRobot version | TBD (pinned) |
-| Python version | TBD |
+| LeRobot version | 0.6.0, git commit `30da8e687a6dfc617fcd94afc367ac7071c376ce` (tag v0.6.0), extras `core-scripts`, `feetech`, `training` |
+| Python version | 3.12 (`>=3.12,<3.13`) |
 | Dev machine | MacBook Pro, M5 Pro (15-core CPU, 16-core GPU), 24 GB unified memory, macOS |
 | Local compute device | `mps` (Apple GPU). No CUDA on this machine: do not propose CUDA-only flags or libraries for local runs |
 | Local use | Teleoperation, recording, ACT training and inference |
@@ -110,8 +111,8 @@ These refine the sections above. Where they differ, this section wins.
 - Machine-specific values (ports, camera indexes) live in `common/hardware.local.yaml`, which is gitignored. A committed `common/hardware.example.yaml` shows the keys without real values.
 - `results/` holds committed summaries and failure logs. Raw outputs, videos, and checkpoints go to the Hub.
 - Proposed commit messages do not include the `Co-Authored-By` trailer.
+- The environment tool is uv. `pyproject.toml` and `uv.lock` are the one environment definition. Change dependencies with `uv add` or by editing `pyproject.toml` and re-locking, never with `pip install`. uv must be an arm64 build, 0.12.0 or newer (`required-version` enforces the version). An x86_64 uv would build an environment without MPS.
 
 ### Open items
 
-- Environment tool: decide after checking what LeLab installed.
 - Which IDs the LeRobot CLI uses to find the calibration files LeLab wrote.
