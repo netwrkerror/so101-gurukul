@@ -4,9 +4,7 @@ This file is the working agreement between you and me for this repo. Read it at 
 
 ## What this repo is
 
-Hands-on physical AI projects on a Seeed Studio SO-ARM101 Pro (leader + follower) using Hugging Face LeRobot. The goal is a portfolio Aakash can explain end to end: data collection, training, evaluation, serving, and observability. Understanding matters more than speed.
-
-Aakash is an experienced ML platform engineer (Python, Kubernetes, Spark, Ray, Prometheus/Grafana) who is new to robotics. Explain robotics concepts; skip explanations of general ML infrastructure.
+Hands-on physical AI projects on a Seeed Studio SO-ARM101 Pro (leader + follower) using Hugging Face LeRobot, covering data collection, training, evaluation, serving, and observability. Understanding matters more than speed.
 
 ## How we work
 
@@ -100,7 +98,7 @@ Fill these in after first setup and keep them current.
 | Local compute device | `mps` (Apple GPU). No CUDA on this machine: do not propose CUDA-only flags or libraries for local runs |
 | Local use | Teleoperation, recording, ACT training and inference |
 | Cloud use | SmolVLA and larger VLA fine-tunes (provider TBD) |
-| Hugging Face user | TBD |
+| Hugging Face user | `causalerror` |
 
 ## Clarifications
 
