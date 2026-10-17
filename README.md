@@ -4,7 +4,7 @@ Hands-on physical AI projects on a Seeed Studio SO-ARM101 Pro (leader and follow
 
 ## Status
 
-The Python environment is set up and LeRobot imports. Nothing has been run on the arms from this repo yet: there are no datasets, trained policies, or results.
+Project 01 has its first dataset: 45 teleoperated episodes of picking up a stuffed toy and dropping it into a bowl, recorded in LeLab. No policy has been trained or evaluated yet, and nothing has been run on the arms from this repo.
 
 ## Hardware
 
@@ -26,6 +26,28 @@ uv sync
 ```
 
 This creates `.venv` with Python 3.12 and LeRobot 0.6.0, pinned to git commit `30da8e687a6dfc617fcd94afc367ac7071c376ce`, with the `core-scripts`, `feetech`, and `training` extras.
+
+### FFmpeg 8 for reading datasets
+
+LeRobot decodes dataset videos with torchcodec, which loads FFmpeg from the system. The pinned torchcodec (0.11.1) supports FFmpeg 4 to 8, and Homebrew's default `ffmpeg` is now version 9, so install FFmpeg 8 explicitly. It needs the Apple Silicon Homebrew in `/opt/homebrew`, not an Intel Homebrew in `/usr/local`:
+
+```sh
+brew install ffmpeg@8
+```
+
+`ffmpeg@8` is installed alongside any other FFmpeg and is not linked into the default locations. Point the library search at it, for example in `~/.zprofile`:
+
+```sh
+export DYLD_FALLBACK_LIBRARY_PATH="/opt/homebrew/opt/ffmpeg@8/lib"
+```
+
+Check that torchcodec loads:
+
+```sh
+uv run python -c "import torchcodec.decoders; print('torchcodec ok')"
+```
+
+Recording does not need this: it encodes video through PyAV, which bundles its own FFmpeg.
 
 Check the install:
 
