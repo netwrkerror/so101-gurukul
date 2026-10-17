@@ -1,0 +1,47 @@
+# Settings used to record causalerror/so101-toy-to-bowl in LeLab.
+# A record of what was used, not a config that any tool reads. The dataset was
+# recorded in LeLab, not from this repo; see DECISIONS.md.
+
+recorded_with:
+  tool: LeLab
+  lelab_version: 0.1.0
+  lelab_commit: 9b5afaee33baa1d773e499937564f3831d25de22
+  lerobot_version: 0.6.0
+  lerobot_commit: 30da8e687a6dfc617fcd94afc367ac7071c376ce
+  date: 2026-10-17
+
+dataset:
+  repo_id: causalerror/so101-toy-to-bowl
+  original_repo_id: causalerror/so101-toy-to-bowl_20261017_130943   # LeLab's name, renamed on the Hub
+  private: true
+  revision: c6319da870f16f94db98e029ca0f4f654d585970   # Hub commit of the only upload
+  single_task: "Pick up the stuffed toy and place it in the bowl"
+  num_episodes: 45
+  total_frames: 25876
+  fps: 30
+  episode_time_s: 45     # maximum; episodes were ended early once the toy was in the bowl
+  reset_time_s: 30
+  video: true
+  streaming_encoding: true
+  video_codec: av1        # from meta/info.json
+
+robot:                    # follower, shishya
+  robot_type: so_follower # as stored in meta/info.json
+  id: gurukul             # calibration ID
+
+teleop:                   # leader, guru
+  id: gurukul
+
+cameras:                  # names are the dataset image keys: observation.images.<name>
+  wrist: {type: opencv, width: 640, height: 480, fps: 30}   # Seeed, on the gripper
+  front: {type: opencv, width: 640, height: 480, fps: 30}   # fixed in front, raised and angled down
+
+episodes_by_spot:         # toy start spot; the bowl was at one fixed position
+  A: "0-13, 44"
+  B: "14-28"
+  C: "29-43"
+
+session_notes:
+  - A few attempts were re-recorded during the session, when shishya moved the bowl or the toy was not picked up or was dropped. The exact number was not recorded.
+  - When shishya pushed the bowl, it was put back on its taped outline before the next attempt.
+  - Re-recorded attempts are expected to be discarded by LeLab, so they should not be in the dataset. To be confirmed when inspecting the episodes (step 4).
