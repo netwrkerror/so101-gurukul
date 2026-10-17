@@ -67,7 +67,7 @@ On macOS, LeRobot commands print an `objc` warning about duplicate `AVFFrameRece
 
 | Project | Status |
 |---|---|
-| `projects/01-baseline-act` | Brief not written yet |
+| `projects/01-baseline-act` | Dataset recorded; training and evaluation not started |
 | `projects/02-serving-observability` | Not started |
 | `projects/03-ray-curation` | Not started |
 
