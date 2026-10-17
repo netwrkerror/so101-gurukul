@@ -34,3 +34,24 @@ Dated log of real choices and the reasons for them. Newest entry last.
 - Cameras are named by viewpoint, not device, because the names become the dataset's image keys (`observation.images.wrist`, `observation.images.front`).
 
 **Deviation from plan:** The brief planned to record from this repo with a committed config. The dataset was recorded in LeLab instead, so its settings have to be written down separately (project 01, step 3).
+
+## 2026-10-17: FFmpeg 8 from Apple Silicon Homebrew for torchcodec
+
+**Decision:** Install the Apple Silicon Homebrew in `/opt/homebrew` and `ffmpeg@8` from it, and set `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/opt/ffmpeg@8/lib` in the shell profile. Homebrew's default `ffmpeg` (9.0.2) stays installed.
+
+**Why:**
+
+- Opening the dataset with `lerobot-dataset-viz` failed with "Could not load libtorchcodec". LeRobot decodes videos with torchcodec, which does not bundle FFmpeg and loads it from the system. There was no FFmpeg on the machine.
+- The only Homebrew was the Intel one under `/usr/local`, running under Rosetta. Its libraries are x86_64 and cannot be loaded by the arm64 Python, and Rosetta is being phased out. torchcodec's library is built to look in `/opt/homebrew/opt/ffmpeg/lib`, the Apple Silicon Homebrew location.
+- Homebrew's default `ffmpeg` is now 9 (`libavutil.61`). torchcodec 0.11.1 supports FFmpeg 4 to 8 (up to `libavutil.60`), so FFmpeg 9 still failed to load.
+- `ffmpeg@8` (8.1.3) is keg-only, so it does not replace FFmpeg 9 and is not in torchcodec's search path. The fallback library path points torchcodec at it without overriding any library that is otherwise found.
+
+**Result:** `import torchcodec.decoders` succeeds with the variable set.
+
+**Dropped:**
+
+- Upgrading torchcodec: LeRobot 0.6.0 requires `torchcodec<0.12`, so it would break the pin.
+- PyAV as the decoding backend: training accepts `--dataset.video_backend=pyav`, but `lerobot-dataset-viz` has no such option.
+- `brew link --force ffmpeg@8`: it would conflict with the linked FFmpeg 9, and torchcodec does not search the linked location anyway.
+
+**Notes:** This is a system dependency outside `uv.lock`; the README setup lists it. The Intel Homebrew is still installed and should be retired separately.

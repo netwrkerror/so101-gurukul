@@ -70,7 +70,7 @@ Evaluation protocol:
 - Camera frame rate was measured with one camera open at a time and the arms idle; LeLab recorded with both cameras and arms, but dropped frames have not been checked yet.
 - Calibration files live outside the repo. Recalibrating now may make the dataset and the arm disagree. Do not recalibrate mid-project; if it happens, log it.
 - Every LeRobot command prints an `objc` duplicate-class warning (`opencv-python-headless` and `av` both bundle `libavdevice`). Not yet checked with cameras running through LeRobot.
-- Training reads the videos back through torchcodec. Homebrew on the dev machine is the Intel install, so if torchcodec needs a system FFmpeg, an arm64 Python cannot load it. Untested.
+- Training reads the videos back through torchcodec, which needs a system FFmpeg between versions 4 and 8. Resolved on 2026-10-17: FFmpeg 8 installed from Apple Silicon Homebrew, see `DECISIONS.md` and the README setup.
 - ACT training time and memory use on `mps` with 24 GB are unknown. If an operation is unsupported on `mps`, or the run is too slow, the fallback is a smaller image size or batch size, logged in `DECISIONS.md`.
 
 ## Out of scope / later
