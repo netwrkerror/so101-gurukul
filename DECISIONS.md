@@ -54,4 +54,18 @@ Dated log of real choices and the reasons for them. Newest entry last.
 - PyAV as the decoding backend: training accepts `--dataset.video_backend=pyav`, but `lerobot-dataset-viz` has no such option.
 - `brew link --force ffmpeg@8`: it would conflict with the linked FFmpeg 9, and torchcodec does not search the linked location anyway.
 
-**Notes:** This is a system dependency outside `uv.lock`; the README setup lists it. The Intel Homebrew is still installed and should be retired separately.
+**Notes:** This is a system dependency outside `uv.lock`; the README setup lists it.
+
+## 2026-10-17: Project 01 workspace marks
+
+**Decision:** The three toy start spots (A, B, C) and the bowl's outline are taped on the table. The spots were checked against the first `front` frame of episodes 0, 14, and 29 in `lerobot-dataset-viz`.
+
+**Why:** Evaluation has to start the toy where it started in the recorded episodes, with the bowl where it was, or the result is not comparable with the training data. The bowl was pushed by `shishya` during some recording attempts and put back on its outline each time, so the outline is the reference for evaluation too.
+
+## 2026-10-17: Project 01 evaluation time limit raised to 45 seconds
+
+**Decision:** An evaluation trial succeeds if the toy is in the bowl and released within 45 seconds, up from the 30 seconds in the approved brief.
+
+**Why:** The recorded demonstrations last 11.6 to 30.1 seconds (mean 19.2, median 18.3). The longest, episode 39, is over 30 seconds, and four more are between 26 and 28.5. A 30-second limit would fail a policy for being as slow as the demonstrations, which measures speed rather than whether the task was learned. 45 seconds is the recording episode limit and about 1.5 times the slowest demonstration.
+
+**Notes:** Decided from the demonstration lengths only, before any training or evaluation. The Intel Homebrew is still installed and should be retired separately.

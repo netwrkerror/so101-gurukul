@@ -1,6 +1,6 @@
 # Project 01: Baseline ACT
 
-Status: approved 2026-10-17. The dataset (step 3) was recorded on 2026-10-17.
+Status: approved. The dataset (step 3) was recorded on 2026-10-17.
 
 ## Goal
 
@@ -41,7 +41,7 @@ Evaluation protocol:
 - Trials: 20, run in one session with one checkpoint, chosen before the session (the final checkpoint from training).
 - Spots: 7 trials at A, 7 at B, 6 at C. The trial order cycles A, B, C and is written down before the session starts.
 - Start of each trial: `shishya` in its rest pose; the toy placed by hand on the marked spot, as close as possible to how it was placed during recording.
-- Success: the toy is fully inside the bowl and released within 30 seconds, with no human contact with either arm.
+- Success: the toy is fully inside the bowl and released within 45 seconds, with no human contact with either arm. 45 seconds matches the recording episode limit.
 - Each failed trial is logged as one of: grasp missed, dropped during carry, missed the bowl, timed out, or other (with a note).
 - Dry runs to check the setup are allowed, logged as dry runs, and not counted.
 - Held fixed between recording and evaluation: both camera positions, lighting, bowl position, the three spots, the toy, and the calibration files.
