@@ -20,3 +20,17 @@ Dated log of real choices and the reasons for them. Newest entry last.
 **Notes:** This machine had an x86_64 Homebrew uv (0.11.21) ahead of the arm64 uv (0.12.0) on PATH, because Homebrew here is the Intel install under `/usr/local`. The Homebrew uv was uninstalled. `required-version = ">=0.12.0"` stays as a guard against an older uv building the environment.
 
 **Known warning:** On macOS, `opencv-python-headless` and `av` each bundle `libavdevice`, so every LeRobot CLI call prints an `objc` duplicate-class warning. LeLab's environment has the same duplicate. Left as is to stay matched to LeLab; to be checked at the first camera test.
+
+## 2026-10-17: Project 01 task, cameras, and the first dataset
+
+**Decision:** Project 01's task is picking up a stuffed toy and dropping it into a bowl at a fixed position. The toy starts from one of three spots (A, B, C). The dataset is `causalerror/so101-toy-to-bowl` (private; LeLab named it `so101-toy-to-bowl_20261017_130943`, renamed on the Hub the same day): 45 episodes, 15 per spot, recorded in LeLab with two cameras, `wrist` (Seeed, on the gripper) and `front` (Logitech, fixed in front, raised and angled down), both 640x480 at 30 fps.
+
+**Why:**
+
+- A puzzle cube was the planned object, but it was hard to grasp reliably during practice. The soft toy is more forgiving of a slightly off grasp. Dropped: the puzzle cube.
+- The bowl stays fixed so the policy only has to handle where the toy starts, not where to drop it. Varying the bowl is left for later.
+- Three spots with 15 episodes each give even coverage, and evaluation uses the same spots.
+- Two views: the wrist camera sees the grasp up close, and the fixed front camera sees where the toy, bowl, and arm are. The front camera was first at table height, seeing the table almost edge-on; it was raised and angled down, and a laptop screen and a framed photo were moved out of its view.
+- Cameras are named by viewpoint, not device, because the names become the dataset's image keys (`observation.images.wrist`, `observation.images.front`).
+
+**Deviation from plan:** The brief planned to record from this repo with a committed config. The dataset was recorded in LeLab instead, so its settings have to be written down separately (project 01, step 3).

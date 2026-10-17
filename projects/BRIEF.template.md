@@ -10,13 +10,6 @@ One or two sentences. What exists at the end that does not exist now?
 
 Where this sits in a real physical AI stack (data collection, curation, training, evaluation, serving, observability), and which teams or roles do this work at scale.
 
-## Concepts I need to understand first
-
-List each concept with a one-line explanation in my own words. Leave a concept blank until I can explain it.
-
-- 
-- 
-
 ## Steps
 
 Ordered, each small enough to be one branch and PR.
@@ -48,11 +41,3 @@ What might not work, and what I would do instead.
 Ideas that came up but do not belong in this project.
 
 - 
-
-## What I should be able to explain afterward
-
-Three to five questions an interviewer could ask about this project. I answer them in `results/` when the project closes.
-
-1. 
-2. 
-3.
