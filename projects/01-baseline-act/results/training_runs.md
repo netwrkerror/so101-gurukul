@@ -39,13 +39,34 @@ Purpose: measure whether batch size 32 processes samples faster than batch size 
 | Field | Value |
 |---|---|
 | Config | `configs/train_act_batch32_check.json` |
-| Git commit | TO FILL |
+| Git commit | `0671a46` |
 | Seed | 1000 |
 | Steps, batch size | 50, 32 |
-| Started, finished | TO FILL |
+| Started, finished | 2026-10-17, dataset loading at 19:50:08 MDT; stopped by hand at step 8 of 50, about 19:56 MDT |
+| Seconds per step | 45.8 s at step 6, 53.3 s at step 7, 60.5 s at step 8, and rising |
+| Samples per second | About 0.5 to 0.7 (batch 8 in run 1: 8 to 9) |
+| Data loading per step | Not reached: no log line before step 10 |
+| Peak memory | About 20.2 GB for the training process in Activity Monitor. System swap at 15.2 GB of 16 GB used |
+| GPU in Activity Monitor | Fluctuating between 6% and 87%, often low: the GPU was waiting on memory |
+| Outcome | Stopped early. Batch 32 does not fit in 24 GB of unified memory alongside everything else: the process grew to about 20 GB, the system swapped heavily, and throughput fell to under a tenth of batch 8's. The Rerun viewer from the dataset review was also still open, holding 4.8 GB |
+
+## Run 3: cloud check on Hugging Face Jobs (50 steps)
+
+Purpose: (1) confirm training runs on HF Jobs with the private dataset and a digest-pinned image; (2) measure seconds per step and cost on `a10g-large`; (3) confirm a checkpoint trained with the image's LeRobot 0.6.2 loads with this repo's LeRobot 0.6.0, which evaluation uses. Not used for evaluation.
+
+| Field | Value |
+|---|---|
+| Config | `configs/train_act_cloud_check.json` |
+| Git commit | TO FILL |
+| Hardware | HF Jobs `a10g-large`: 1x NVIDIA A10G (24 GB), 12 vCPU, 46 GB RAM, $1.50/hour |
+| Image | `huggingface/lerobot-gpu@sha256:fc48db80c040cfbc33e0a481e351b042a77422c527e5150138c354e4774e471f` (the `latest` tag as of 2026-10-17; LeRobot 0.6.2, torch 2.11.0+cu128, torchcodec 0.11.1) |
+| Seed | 1000 |
+| Steps, batch size, workers | 50, 8, 8 |
+| Job ID | TO FILL |
+| Started, finished, billed time | TO FILL |
 | Seconds per step | TO FILL (steps 20 to 50) |
-| Samples per second | TO FILL (batch 8 in run 1: 8 to 9) |
 | Data loading per step | TO FILL |
-| Peak memory | TO FILL (process, and Activity Monitor's Memory Used) |
-| GPU in Activity Monitor | TO FILL |
+| Loss at step 10 and step 50 | TO FILL |
+| Model repo | `causalerror/act-so101-toy-to-bowl-cloud-check` (private: TO CONFIRM on the Hub) |
+| Loads with local LeRobot 0.6.0 | TO FILL |
 | Outcome | TO FILL |
