@@ -96,8 +96,8 @@ Fill these in after first setup and keep them current.
 | Python version | 3.12 (`>=3.12,<3.13`) |
 | Dev machine | MacBook Pro, M5 Pro (15-core CPU, 16-core GPU), 24 GB unified memory, macOS |
 | Local compute device | `mps` (Apple GPU). No CUDA on this machine: do not propose CUDA-only flags or libraries for local runs |
-| Local use | Teleoperation, recording, ACT training and inference |
-| Cloud use | SmolVLA and larger VLA fine-tunes (provider TBD) |
+| Local use | Teleoperation, recording, short training checks, ACT inference and evaluation |
+| Cloud use | Hugging Face Jobs: full ACT training (project 01, `a10g-large`, image pinned by digest), and later SmolVLA and larger VLA fine-tunes. The cloud image runs LeRobot 0.6.2; see `DECISIONS.md` (2026-10-17) for the checkpoint conversion |
 | Hugging Face user | `causalerror` |
 
 ## Clarifications

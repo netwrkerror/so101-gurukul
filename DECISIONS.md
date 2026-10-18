@@ -101,4 +101,6 @@ Dated log of real choices and the reasons for them. Newest entry last.
 
 **Version mismatch:** The image's only tags are `latest` and a pull-request build. Its build metadata shows it is built from LeRobot's source at build time; the `pyproject.toml` in the image says LeRobot 0.6.2, with torch 2.11.0, torchvision 0.26.0, and torchcodec 0.11.1, the same as this repo. This repo pins LeRobot 0.6.0, which is what evaluation uses. Pinning the digest keeps the check and the full run on identical code; the cloud check tests whether a 0.6.2 checkpoint loads in 0.6.0.
 
-**If the check fails:** train locally on the Mac (batch 8, 100,000 steps, about 26 hours), or plan a LeRobot upgrade as its own decision. The Intel Homebrew is still installed and should be retired separately.
+**If the check fails:** train locally on the Mac (batch 8, 100,000 steps, about 26 hours), or plan a LeRobot upgrade as its own decision.
+
+**Check result (same day):** passed (run 3 in `projects/01-baseline-act/results/training_runs.md`). 0.16 s per step on `a10g-large`, loss within 1% of the Mac's at every logged step. The checkpoint loads in local 0.6.0 and predicts an action, with one conversion: remove `"dtype": null` from the downloaded `config.json`, a field 0.6.2 adds and 0.6.0 does not know. The decision stands, and evaluation will use a local copy of the final model converted this way. The Intel Homebrew is still installed and should be retired separately.
