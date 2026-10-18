@@ -103,4 +103,27 @@ Dated log of real choices and the reasons for them. Newest entry last.
 
 **If the check fails:** train locally on the Mac (batch 8, 100,000 steps, about 26 hours), or plan a LeRobot upgrade as its own decision.
 
-**Check result (same day):** passed (run 3 in `projects/01-baseline-act/results/training_runs.md`). 0.16 s per step on `a10g-large`, loss within 1% of the Mac's at every logged step. The checkpoint loads in local 0.6.0 and predicts an action, with one conversion: remove `"dtype": null` from the downloaded `config.json`, a field 0.6.2 adds and 0.6.0 does not know. The decision stands, and evaluation will use a local copy of the final model converted this way. The Intel Homebrew is still installed and should be retired separately.
+**Check result (same day):** passed (run 3 in `projects/01-baseline-act/results/training_runs.md`). 0.16 s per step on `a10g-large`, loss within 1% of the Mac's at every logged step. The checkpoint loads in local 0.6.0 and predicts an action, with one conversion: remove `"dtype": null` from the downloaded `config.json`, a field 0.6.2 adds and 0.6.0 does not know. The decision stands, and evaluation will use a local copy of the final model converted this way.
+
+## 2026-10-18: Project 01 evaluation settings
+
+**Decision:** Evaluate with `lerobot-rollout` in episodic mode (`configs/eval_act.json`): 20 trials of up to 45 seconds, 30-second resets with the arm returning to its starting position, every trial recorded to the private dataset `causalerror/rollout_act_so101_toy_to_bowl_eval`, and a per-joint speed cap on the follower (`max_relative_target`). A 2-trial dry run (`configs/eval_act_dryrun.json`, private dataset `..._dryrun`) comes first and is not counted.
+
+**Speed cap:** the cap limits, at each control step, how far the commanded position may be from the joint's current position, in degrees (gripper: its 0 to 100 scale). The values are about 1.5 times the largest leader-to-follower gap in the 25,876 recorded frames, rounded up to a multiple of 5, so no demonstrated motion would be clipped:
+
+| Joint | Recorded median | p99 | max | Cap |
+|---|---|---|---|---|
+| shoulder_pan | 0.48 | 11.47 | 20.62 | 35 |
+| shoulder_lift | 2.02 | 19.69 | 26.99 | 45 |
+| elbow_flex | 2.20 | 20.31 | 29.98 | 45 |
+| wrist_flex | 1.05 | 8.35 | 17.14 | 30 |
+| wrist_roll | 0.44 | 5.71 | 15.03 | 25 |
+| gripper | 0.64 | 20.10 | 45.43 | 70 |
+
+**Why:**
+
+- This is the first time the arm moves under a policy, and LeRobot sets no cap by default. The cap stops a sudden jump far outside anything demonstrated, without changing normal behaviour.
+- Recording every trial keeps video evidence for each outcome next to the model and dataset, private like them.
+- 30 seconds of reset is enough to note the outcome and place the toy on the next spot.
+
+**Notes:** The gripper's large gap comes from grasping: the leader closes further than the follower can while the toy is between its fingers. The Intel Homebrew is still installed and should be retired separately.

@@ -1,0 +1,37 @@
+{
+  "policy": {
+    "path": "outputs/act_final"
+  },
+  "device": "mps",
+  "strategy": {
+    "type": "episodic",
+    "reset_to_initial_position": true
+  },
+  "robot": {
+    "type": "so101_follower",
+    "id": "gurukul",
+    "max_relative_target": {
+      "shoulder_pan": 35.0,
+      "shoulder_lift": 45.0,
+      "elbow_flex": 45.0,
+      "wrist_flex": 30.0,
+      "wrist_roll": 25.0,
+      "gripper": 70.0
+    }
+  },
+  "dataset": {
+    "repo_id": "causalerror/rollout_act_so101_toy_to_bowl_dryrun",
+    "single_task": "Pick up the stuffed toy and place it in the bowl",
+    "num_episodes": 2,
+    "episode_time_s": 45,
+    "reset_time_s": 30,
+    "fps": 30,
+    "push_to_hub": true,
+    "private": true,
+    "streaming_encoding": true
+  },
+  "task": "Pick up the stuffed toy and place it in the bowl",
+  "fps": 30,
+  "display_data": false,
+  "return_to_initial_position": true
+}
