@@ -80,15 +80,18 @@ Purpose: the project 01 policy. Its final checkpoint is the one evaluated in ste
 | Field | Value |
 |---|---|
 | Config | `configs/train_act.json` |
-| Git commit | TO FILL |
+| Git commit | `ec96cac` |
 | Hardware and image | As run 3: `a10g-large`, image digest `sha256:fc48db80c040…`, LeRobot 0.6.2 |
 | Seed | 1000 |
 | Steps, batch size, workers | 100,000, 8, 8 (LeRobot defaults except workers) |
 | Checkpoints | Every 20,000 steps, each pushed to the model repo as it is written |
 | Expected time and cost | About 4.4 hours of training at 0.16 s per step, plus setup; about $7 at $1.50/hour. Timeout 8 hours |
-| Job ID | TO FILL |
-| Started, finished, billed time | TO FILL |
-| Seconds per step | TO FILL |
-| Loss at 20k, 40k, 60k, 80k, 100k steps | TO FILL |
-| Model repo and revision | `causalerror/act-so101-toy-to-bowl` (private: TO CONFIRM), revision TO FILL |
-| Outcome | TO FILL |
+| Job ID | `6ad43d0cc66288145226f77f` |
+| Started, finished, billed time | Job started 2026-10-18 03:29:16 UTC; training began about 03:31; step 100,000 at 07:59:11; model pushed at 07:59:18 UTC. About 4.5 hours of job time from the log timestamps, so about $6.75 at $1.50/hour. (`hf jobs inspect` printed a truncated table without the duration.) |
+| Seconds per step | 0.160 to 0.162 throughout; data loading 0.002 s per step; GPU memory 3.7 GB (5 of 23 GB in the job's resource view); GPU 95 to 97% busy; CPU about 14% |
+| Loss at 20k, 40k, 60k, 80k, 100k steps | 0.157, 0.110, 0.090, 0.077, 0.067 (L1 part 0.141, 0.106, 0.088, 0.076, 0.066; the KL part is about 0.000 from 40k on). 100,000 steps is about 31 passes over the dataset |
+| Model repo and revision | `causalerror/act-so101-toy-to-bowl`, private (confirmed on the Hub), revision `2ecffdd421f46c20f5220c3ca9c4e1fca988a646` |
+| Converted copy for evaluation | `outputs/act_final/` (local, gitignored): the top-level model files at that revision, with `"dtype": null` removed from `config.json` |
+| Offline sanity check | Loaded with local LeRobot 0.6.0. Over 30 frames spread evenly across the dataset, mean absolute error between predicted and recorded action: shoulder pan 1.07, shoulder lift 1.83, elbow flex 1.87, wrist flex 0.82, wrist roll 0.77 (degrees), gripper 0.86. These are training frames, so this shows the model learned the demonstrations, not that it succeeds on the arm |
+| Outcome | Completed. Final checkpoint chosen for evaluation in step 6 |
+| Notes | CPU stayed at about 14% of 12 vCPUs, so `a10g-small` (same GPU, 4 vCPUs, $1.00/hour) would likely have been enough; try it for future ACT runs. With FFmpeg 8 loaded by torchcodec, the `objc` duplicate-class warning now also names Homebrew's `libavdevice`; same harmless warning |
