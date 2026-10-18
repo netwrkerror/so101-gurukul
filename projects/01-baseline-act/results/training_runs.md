@@ -31,3 +31,21 @@ Purpose: confirm the pipeline runs end to end on `mps` (dataset download, video 
 Failed attempts:
 
 - 2026-10-17, git commit `bc3d72a`: stopped at step 0 with "Could not load libtorchcodec"; no step ran and no output folder was created. Cause: the command was wrapped in `/usr/bin/time`, which macOS System Integrity Protection treats as a protected system binary, so it strips `DYLD_*` variables from its environment. torchcodec therefore never saw `DYLD_FALLBACK_LIBRARY_PATH` and could not find FFmpeg 8. Fix: use the shell's built-in `time` instead.
+
+## Run 2: batch 32 throughput check (50 steps)
+
+Purpose: measure whether batch size 32 processes samples faster than batch size 8 on `mps`, to decide the full run's batch size and length. Measures speed and memory only; the loss is not compared, and no checkpoint is saved.
+
+| Field | Value |
+|---|---|
+| Config | `configs/train_act_batch32_check.json` |
+| Git commit | TO FILL |
+| Seed | 1000 |
+| Steps, batch size | 50, 32 |
+| Started, finished | TO FILL |
+| Seconds per step | TO FILL (steps 20 to 50) |
+| Samples per second | TO FILL (batch 8 in run 1: 8 to 9) |
+| Data loading per step | TO FILL |
+| Peak memory | TO FILL (process, and Activity Monitor's Memory Used) |
+| GPU in Activity Monitor | TO FILL |
+| Outcome | TO FILL |
