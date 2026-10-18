@@ -68,4 +68,10 @@ Dated log of real choices and the reasons for them. Newest entry last.
 
 **Why:** The recorded demonstrations last 11.6 to 30.1 seconds (mean 19.2, median 18.3). The longest, episode 39, is over 30 seconds, and four more are between 26 and 28.5. A 30-second limit would fail a policy for being as slow as the demonstrations, which measures speed rather than whether the task was learned. 45 seconds is the recording episode limit and about 1.5 times the slowest demonstration.
 
-**Notes:** Decided from the demonstration lengths only, before any training or evaluation. The Intel Homebrew is still installed and should be retired separately.
+**Notes:** Decided from the demonstration lengths only, before any training or evaluation.
+
+## 2026-10-17: Train project 01 on all 45 episodes
+
+**Decision:** The ACT policy is trained on all 45 episodes of `causalerror/so101-toy-to-bowl` at revision `c6319da870f16f94db98e029ca0f4f654d585970`. No episode is excluded.
+
+**Why:** Every episode was reviewed in `lerobot-dataset-viz` and marked `ok`: correct start spot, bowl on its outline, toy ends in the bowl, no hand in the `front` view, both feeds smooth, no failed attempt kept. Replaying episode 0 on `shishya` reproduced the demonstrated motion. See `projects/01-baseline-act/results/dataset_inspection.md`. The Intel Homebrew is still installed and should be retired separately.
