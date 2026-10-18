@@ -74,4 +74,33 @@ Dated log of real choices and the reasons for them. Newest entry last.
 
 **Decision:** The ACT policy is trained on all 45 episodes of `causalerror/so101-toy-to-bowl` at revision `c6319da870f16f94db98e029ca0f4f654d585970`. No episode is excluded.
 
-**Why:** Every episode was reviewed in `lerobot-dataset-viz` and marked `ok`: correct start spot, bowl on its outline, toy ends in the bowl, no hand in the `front` view, both feeds smooth, no failed attempt kept. Replaying episode 0 on `shishya` reproduced the demonstrated motion. See `projects/01-baseline-act/results/dataset_inspection.md`. The Intel Homebrew is still installed and should be retired separately.
+**Why:** Every episode was reviewed in `lerobot-dataset-viz` and marked `ok`: correct start spot, bowl on its outline, toy ends in the bowl, no hand in the `front` view, both feeds smooth, no failed attempt kept. Replaying episode 0 on `shishya` reproduced the demonstrated motion. See `projects/01-baseline-act/results/dataset_inspection.md`.
+
+## 2026-10-17: No W&B logging for project 01 training
+
+**Decision:** Project 01 trains with Weights & Biases logging off (LeRobot's default). Training metrics come from LeRobot's own log, saved to a gitignored file per run, and the key numbers go into `projects/01-baseline-act/results/training_runs.md`.
+
+**Why:**
+
+- W&B sends training metrics to an outside service and needs another account. Nothing in project 01 needs that: there is one run at a time, on one machine.
+- LeRobot already prints the loss, gradient norm, and timing at a fixed interval, which is enough to plot a loss curve afterwards.
+- Project 02 is about observability. Choosing a metrics stack belongs there, where it can cover training and serving together, rather than adopting one now by default.
+
+**Revisit:** in project 02, or earlier if comparing several training runs side by side becomes painful from logs alone.
+
+## 2026-10-17: Project 01 full training on Hugging Face Jobs, pending a cloud check
+
+**Decision:** The full ACT training run moves from the Mac to Hugging Face Jobs, flavor `a10g-large` (1x A10G 24 GB, 12 vCPU, $1.50/hour), using LeRobot's built-in job support. The container image is pinned by digest: `huggingface/lerobot-gpu@sha256:fc48db80c040cfbc33e0a481e351b042a77422c527e5150138c354e4774e471f`. This holds only if a 50-step cloud check passes, including loading its checkpoint with local LeRobot 0.6.0.
+
+**Why:**
+
+- On the Mac, batch 8 runs at 0.95 s per step, so LeRobot's default 100,000 steps would take about 26 hours. Batch 32 does not fit in 24 GB of unified memory (run 2).
+- A cloud GPU frees the Mac and rehearses the cloud workflow already planned for SmolVLA.
+- `a10g-large` over `a10g-small`: the same GPU with 12 vCPUs instead of 4, because video decoding for each sample runs on the CPU.
+- LeRobot creates the job's model repo as private.
+
+**Version mismatch:** The image's only tags are `latest` and a pull-request build. Its build metadata shows it is built from LeRobot's source at build time; the `pyproject.toml` in the image says LeRobot 0.6.2, with torch 2.11.0, torchvision 0.26.0, and torchcodec 0.11.1, the same as this repo. This repo pins LeRobot 0.6.0, which is what evaluation uses. Pinning the digest keeps the check and the full run on identical code; the cloud check tests whether a 0.6.2 checkpoint loads in 0.6.0.
+
+**If the check fails:** train locally on the Mac (batch 8, 100,000 steps, about 26 hours), or plan a LeRobot upgrade as its own decision.
+
+**Check result (same day):** passed (run 3 in `projects/01-baseline-act/results/training_runs.md`). 0.16 s per step on `a10g-large`, loss within 1% of the Mac's at every logged step. The checkpoint loads in local 0.6.0 and predicts an action, with one conversion: remove `"dtype": null` from the downloaded `config.json`, a field 0.6.2 adds and 0.6.0 does not know. The decision stands, and evaluation will use a local copy of the final model converted this way. The Intel Homebrew is still installed and should be retired separately.

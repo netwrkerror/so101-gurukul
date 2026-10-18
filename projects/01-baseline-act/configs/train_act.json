@@ -1,0 +1,32 @@
+{
+  "job_name": "p01_act",
+  "output_dir": "outputs/train/p01_act",
+  "seed": 1000,
+  "steps": 100000,
+  "batch_size": 8,
+  "num_workers": 8,
+  "log_freq": 200,
+  "save_checkpoint": true,
+  "save_freq": 20000,
+  "save_checkpoint_to_hub": true,
+  "dataset": {
+    "repo_id": "causalerror/so101-toy-to-bowl",
+    "revision": "c6319da870f16f94db98e029ca0f4f654d585970",
+    "video_backend": "torchcodec"
+  },
+  "policy": {
+    "type": "act",
+    "device": "cuda",
+    "push_to_hub": true,
+    "repo_id": "causalerror/act-so101-toy-to-bowl",
+    "private": true
+  },
+  "wandb": {
+    "enable": false
+  },
+  "job": {
+    "target": "a10g-large",
+    "image": "huggingface/lerobot-gpu@sha256:fc48db80c040cfbc33e0a481e351b042a77422c527e5150138c354e4774e471f",
+    "timeout": "8h"
+  }
+}

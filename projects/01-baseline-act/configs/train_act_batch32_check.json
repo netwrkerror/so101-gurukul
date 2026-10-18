@@ -1,0 +1,23 @@
+{
+  "job_name": "p01_act_batch32_check",
+  "output_dir": "outputs/train/p01_act_batch32_check",
+  "seed": 1000,
+  "steps": 50,
+  "batch_size": 32,
+  "num_workers": 4,
+  "log_freq": 10,
+  "save_checkpoint": false,
+  "dataset": {
+    "repo_id": "causalerror/so101-toy-to-bowl",
+    "revision": "c6319da870f16f94db98e029ca0f4f654d585970",
+    "video_backend": "torchcodec"
+  },
+  "policy": {
+    "type": "act",
+    "device": "mps",
+    "push_to_hub": false
+  },
+  "wandb": {
+    "enable": false
+  }
+}
