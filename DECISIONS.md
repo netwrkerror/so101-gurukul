@@ -74,4 +74,16 @@ Dated log of real choices and the reasons for them. Newest entry last.
 
 **Decision:** The ACT policy is trained on all 45 episodes of `causalerror/so101-toy-to-bowl` at revision `c6319da870f16f94db98e029ca0f4f654d585970`. No episode is excluded.
 
-**Why:** Every episode was reviewed in `lerobot-dataset-viz` and marked `ok`: correct start spot, bowl on its outline, toy ends in the bowl, no hand in the `front` view, both feeds smooth, no failed attempt kept. Replaying episode 0 on `shishya` reproduced the demonstrated motion. See `projects/01-baseline-act/results/dataset_inspection.md`. The Intel Homebrew is still installed and should be retired separately.
+**Why:** Every episode was reviewed in `lerobot-dataset-viz` and marked `ok`: correct start spot, bowl on its outline, toy ends in the bowl, no hand in the `front` view, both feeds smooth, no failed attempt kept. Replaying episode 0 on `shishya` reproduced the demonstrated motion. See `projects/01-baseline-act/results/dataset_inspection.md`.
+
+## 2026-10-17: No W&B logging for project 01 training
+
+**Decision:** Project 01 trains with Weights & Biases logging off (LeRobot's default). Training metrics come from LeRobot's own log, saved to a gitignored file per run, and the key numbers go into `projects/01-baseline-act/results/training_runs.md`.
+
+**Why:**
+
+- W&B sends training metrics to an outside service and needs another account. Nothing in project 01 needs that: there is one run at a time, on one machine.
+- LeRobot already prints the loss, gradient norm, and timing at a fixed interval, which is enough to plot a loss curve afterwards.
+- Project 02 is about observability. Choosing a metrics stack belongs there, where it can cover training and serving together, rather than adopting one now by default.
+
+**Revisit:** in project 02, or earlier if comparing several training runs side by side becomes painful from logs alone. The Intel Homebrew is still installed and should be retired separately.

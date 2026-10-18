@@ -16,14 +16,18 @@ Purpose: confirm the pipeline runs end to end on `mps` (dataset download, video 
 | Field | Value |
 |---|---|
 | Config | `configs/train_act_gpu_check.json` |
-| Git commit | TO FILL |
+| Git commit | `bc3d72a` |
 | Seed | 1000 |
 | Steps, batch size | 50, 8 |
-| Started, finished | TO FILL |
-| Device confirmed | TO FILL (from the log, and GPU activity in Activity Monitor) |
-| Seconds per step | TO FILL (from the later log lines; the first includes start-up) |
-| Peak memory | TO FILL |
-| Loss at step 10 and step 50 | TO FILL |
-| Checkpoint saved | TO FILL |
-| Outcome | TO FILL |
-| Notes | |
+| Started, finished | 2026-10-17, about 19:36:15 to 19:37:23 MDT; 66 s for the training command |
+| Device confirmed | `mps` in the logged config. A repeat of the same run, identical except for output folder `outputs/train/p01_act_gpu_check_1`, showed the training process at 97.3% GPU in Activity Monitor |
+| Seconds per step | 0.95 s update time at steps 20 to 50 (about 1.05 steps/s, 8 to 9 samples/s); data loading 0.004 s per step. Step 10 was slower (1.79 s) because of start-up |
+| Peak memory | 935 MB maximum resident memory for the process. This may not fully count GPU memory, which shares system memory on Apple Silicon |
+| Loss at step 10 and step 50 | 43.0 and 5.90 (step 20: 13.3, step 30: 8.31, step 40: 6.59) |
+| Checkpoint saved | Yes, `checkpoints/000050/`, about 590 MB including optimizer state |
+| Outcome | Passed: dataset loaded (45 episodes, 25,876 frames), videos decoded, 50 steps trained on `mps`, loss fell steadily, checkpoint written |
+| Notes | 52M learnable parameters. 50 steps at batch 8 is 400 samples, about 1.5% of one pass over the dataset |
+
+Failed attempts:
+
+- 2026-10-17, git commit `bc3d72a`: stopped at step 0 with "Could not load libtorchcodec"; no step ran and no output folder was created. Cause: the command was wrapped in `/usr/bin/time`, which macOS System Integrity Protection treats as a protected system binary, so it strips `DYLD_*` variables from its environment. torchcodec therefore never saw `DYLD_FALLBACK_LIBRARY_PATH` and could not find FFmpeg 8. Fix: use the shell's built-in `time` instead.
