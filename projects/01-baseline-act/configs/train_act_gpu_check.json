@@ -1,0 +1,24 @@
+{
+  "job_name": "p01_act_gpu_check",
+  "output_dir": "outputs/train/p01_act_gpu_check",
+  "seed": 1000,
+  "steps": 50,
+  "batch_size": 8,
+  "num_workers": 4,
+  "log_freq": 10,
+  "save_checkpoint": true,
+  "save_freq": 50,
+  "dataset": {
+    "repo_id": "causalerror/so101-toy-to-bowl",
+    "revision": "c6319da870f16f94db98e029ca0f4f654d585970",
+    "video_backend": "torchcodec"
+  },
+  "policy": {
+    "type": "act",
+    "device": "mps",
+    "push_to_hub": false
+  },
+  "wandb": {
+    "enable": false
+  }
+}
