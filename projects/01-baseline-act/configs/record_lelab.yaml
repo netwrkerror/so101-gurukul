@@ -44,4 +44,4 @@ episodes_by_spot:         # toy start spot; the bowl was at one fixed position
 session_notes:
   - A few attempts were re-recorded during the session, when shishya moved the bowl or the toy was not picked up or was dropped. The exact number was not recorded.
   - When shishya pushed the bowl, it was put back on its taped outline before the next attempt.
-  - Re-recorded attempts are expected to be discarded by LeLab, so they should not be in the dataset. To be confirmed when inspecting the episodes (step 4).
+  - Re-recorded attempts were discarded by LeLab: the step 4 review found no failed or partial attempt among the 45 kept episodes (results/dataset_inspection.md).
