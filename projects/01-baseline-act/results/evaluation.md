@@ -7,7 +7,7 @@ Step 6 of the brief. The schedule and protocol below were written before any tri
 - Policy: `causalerror/act-so101-toy-to-bowl` at revision `2ecffdd421f46c20f5220c3ca9c4e1fca988a646` (the final checkpoint of run 4, chosen before evaluation), converted for LeRobot 0.6.0 by removing `"dtype": null` from `config.json`. Local copy: `outputs/act_final/`.
 - Run with: `lerobot-rollout`, episodic strategy, LeRobot 0.6.0 (commit `30da8e687a6dfc617fcd94afc367ac7071c376ce`), on `mps`.
 - Config: `configs/eval_act.json`.
-- Trial recordings: `causalerror/rollout_act_so101_toy_to_bowl_eval_<timestamp>` (private; LeRobot appends the session's timestamp). Exact name: TO FILL.
+- Trial recordings: `causalerror/rollout_act_so101_toy_to_bowl_eval_<timestamp>` (private; LeRobot appends the session's timestamp). Session dataset: `causalerror/rollout_act_so101_toy_to_bowl_eval_20261018_194442`, 20 episodes (one per counted trial).
 
 ## Protocol
 
@@ -23,17 +23,15 @@ From the brief:
 
 ## Session conditions
 
-To fill in on the day:
-
 | Check | Value |
 |---|---|
-| Date and time | TO FILL |
-| Git commit | TO FILL |
-| Camera indexes (from `lerobot-find-cameras`) | TO FILL |
-| `front` view matches the reference still | TO FILL |
-| Lighting as during recording | TO FILL |
-| Bowl on its outline, spots taped | TO FILL |
-| No recalibration since recording | TO FILL |
+| Date and time | 2026-10-18, 19:44 to 20:04 MDT |
+| Git commit | `e0716e7`. The lighting decision below was written before the session but committed after it |
+| Camera indexes (from `lerobot-find-cameras`) | `wrist` 0, `front` 1, confirmed from the saved stills before the dry run |
+| `front` view matches the reference still | Close: compared with the first `front` frame of recorded episode 0, the framing is within a few percent; the bowl looks slightly further into the frame |
+| Lighting as during recording | No, by decision (`DECISIONS.md`, 2026-10-18): blinds closed and evening light, against open blinds and daylight during recording. The session ran from 19:44 to 20:04 with the blinds closed. Tape marks for the spots and bowl outline are also new in the `front` view |
+| Bowl on its outline, spots taped | Yes |
+| No recalibration since recording | None reported |
 
 ## Dry runs (not counted)
 
@@ -41,8 +39,8 @@ To fill in on the day:
 
 | Dry run | Spot | Outcome | Notes |
 |---|---|---|---|
-| 1 | A | TO FILL | Ended with the right arrow after 41.6 s (1,247 frames) |
-| 2 | A | TO FILL | Ran the full 45 s (1,341 frames) |
+| 1 | A | Success | Ended with the right arrow after 41.6 s (1,247 frames) |
+| 2 | A | Success | Ran the full 45 s (1,341 frames); the right arrow was not pressed |
 
 Pipeline checks from the dry run:
 
@@ -54,29 +52,71 @@ Pipeline checks from the dry run:
 
 | Trial | Spot | Outcome | Failure type | Time to success (s) | Notes |
 |---|---|---|---|---|---|
-| 1 | A | | | | |
-| 2 | B | | | | |
-| 3 | C | | | | |
-| 4 | A | | | | |
-| 5 | B | | | | |
-| 6 | C | | | | |
-| 7 | A | | | | |
-| 8 | B | | | | |
-| 9 | C | | | | |
-| 10 | A | | | | |
-| 11 | B | | | | |
-| 12 | C | | | | |
-| 13 | A | | | | |
-| 14 | B | | | | |
-| 15 | C | | | | |
-| 16 | A | | | | |
-| 17 | B | | | | |
-| 18 | C | | | | |
-| 19 | A | | | | |
-| 20 | B | | | | |
+| 1 | A | Success |  | 18 |  |
+| 2 | B | Success |  | 15 |  |
+| 3 | C | Success |  | 16 | Grasped by the legs. Re-run after a setup issue (see below) |
+| 4 | A | Success |  | 14 |  |
+| 5 | B | Failure | Grasp missed |  | Failed to pick up; retried several times until time ran out |
+| 6 | C | Failure | Missed the bowl |  | Missed the first grasp, moved toward the bowl, came back and grasped, then dropped the toy outside the bowl and returned to rest. Ended with the right arrow at 38 s |
+| 7 | A | Failure | Missed the bowl |  | Grasped and moved quickly to the bowl, released from above outside it; the toy fell to the floor. Ended with the right arrow at 13 s |
+| 8 | B | Failure | Grasp missed |  | Did not grasp properly and displaced the toy; went toward the bowl, came back and retried several times; the arm did not reach far enough |
+| 9 | C | Failure | Other: did not release |  | Grasped and carried the toy into the bowl but did not open the gripper; carried it back and dropped it near the marker; repeated grasp attempts failed |
+| 10 | A | Success |  | 17 |  |
+| 11 | B | Failure | Grasp missed |  | Could not pick up the toy. Re-run after a setup issue (see below); the re-run is the counted trial |
+| 12 | C | Success |  | 17 | Grasped by the legs |
+| 13 | A | Failure | Grasp missed |  | Pushed the toy off its spot, then could not pick it up |
+| 14 | B | Failure | Grasp missed |  | Pushed the toy off its spot, then could not pick it up |
+| 15 | C | Success |  | 15 | Grasped by the legs. Re-run after a setup issue (see below) |
+| 16 | A | Failure | Grasp missed |  | Pushed the toy off its spot, then could not pick it up |
+| 17 | B | Success |  | 17 |  |
+| 18 | C | Failure | Other: did not release |  | Picked up the toy but did not release it in the bowl; motions looked hesitant |
+| 19 | A | Success |  | 23 |  |
+| 20 | B | Success |  | 16 |  |
 
-Voided trials (setup mistakes, re-run): none so far.
+Time to success is when the right arrow was pressed after the toy was released, from the log timestamps, rounded to the second: an upper bound on the true time.
+
+Voided trials (re-run after a setup issue, as reported by the operator; the discarded attempts are not in the dataset):
+
+| Trial | Spot | Discarded attempt | Re-run |
+|---|---|---|---|
+| 3 | C | Stopped with the left arrow after 24 s | Success |
+| 11 | B | Stopped with the left arrow after 30 s | Failure |
+| 15 | C | Stopped with the left arrow after 9 s | Success |
+
+Deviations from the protocol:
+
+- The right arrow ended two failed trials early: trial 6 at 38 s (toy already dropped outside the bowl, arm back at rest) and trial 7 at 13 s (toy on the floor). Neither could have become a success, so the outcomes stand.
+- Lighting differed from recording, by decision (see Session conditions).
 
 ## Summary
 
-TO FILL after the session: successes out of 20 overall and per spot, failure counts by type, and whether the 10/20 target was reached.
+**10/20 successes**: stuffed toy from three marked spots into a fixed bowl, `wrist` and `front` cameras, 45-second limit, one checkpoint, room lighting with the blinds closed (not the recording's daylight).
+
+| Spot | Successes |
+|---|---|
+| A | 4/7 |
+| B | 3/7 |
+| C | 3/6 |
+| Total | 10/20 |
+
+Failures by type:
+
+| Type | Count | Trials |
+|---|---|---|
+| Grasp missed | 6 | 5, 8, 11, 13, 14, 16 |
+| Missed the bowl | 2 | 6, 7 |
+| Other: did not release | 2 | 9, 18 |
+| Dropped during carry | 0 | |
+| Timed out | 0 | |
+
+The brief's target of 10/20 is reached, so per the definition of done there is no improvement round.
+
+What the numbers support:
+
+- With 20 trials, 10/20 is consistent with a true success rate of roughly 30% to 70%. The per-spot counts (6 or 7 trials each) are too small to say one spot is harder than another.
+- Grasping is the main weakness: 6 of the 10 failures never picked the toy up. In three of them the policy pushed the toy off its spot and could not recover; the training data never shows the toy away from the three spots.
+- In two failures the policy carried the toy to the bowl but did not open the gripper.
+- Successful trials took 14 to 23 seconds (mean 16.8), against 19.2 seconds on average for the demonstrations.
+- Trials 5 to 9 failed in a row. The cause is not known; the log shows nothing different about them.
+
+Not tested: performance in the recording's lighting, from spots other than A, B, and C, or with the bowl elsewhere.
