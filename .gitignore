@@ -234,3 +234,6 @@ wandb/
 *.pt
 *.mp4
 *hardware.local.yaml
+
+# blog drafts, kept private until published
+blog/

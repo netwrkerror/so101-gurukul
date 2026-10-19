@@ -1,6 +1,6 @@
 # Project 01: Baseline ACT
 
-Status: approved. The dataset (step 3) was recorded on 2026-10-17.
+Status: complete, 2026-10-18. Result: 10/20, which meets the success target. See `results/summary.md`.
 
 ## Goal
 
