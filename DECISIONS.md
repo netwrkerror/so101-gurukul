@@ -126,4 +126,14 @@ Dated log of real choices and the reasons for them. Newest entry last.
 - Recording every trial keeps video evidence for each outcome next to the model and dataset, private like them.
 - 30 seconds of reset is enough to note the outcome and place the toy on the next spot.
 
-**Notes:** The gripper's large gap comes from grasping: the leader closes further than the follower can while the toy is between its fingers. The Intel Homebrew is still installed and should be retired separately.
+**Notes:** The gripper's large gap comes from grasping: the leader closes further than the follower can while the toy is between its fingers.
+
+## 2026-10-18: Evaluate project 01 in the current lighting
+
+**Decision:** The 20 counted trials run in the current lighting (blinds closed, evening or room light), not the recording's (open blinds, daylight around 1 pm). This departs from the brief, which lists lighting among the conditions held fixed between recording and evaluation.
+
+**Why:** Chosen to evaluate now rather than wait for matching daylight. Both dry-run trials at spot A in this lighting succeeded, so the policy is not obviously broken by it.
+
+**Consequence:** The evaluation is not fully like for like with the training data. The result is reported with this condition stated, and a lower success rate than the policy would get in recording-matched light cannot be ruled out. Two dry-run successes at one spot are too few to show the lighting has no effect. Evaluating again in matched light remains an option for later.
+
+**Also changed since recording:** tape marks for the three spots and the bowl outline are now visible in the `front` view. The Intel Homebrew is still installed and should be retired separately.
