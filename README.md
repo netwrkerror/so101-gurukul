@@ -4,7 +4,9 @@ Hands-on physical AI projects on a Seeed Studio SO-ARM101 Pro (leader and follow
 
 ## Status
 
-Project 01 has its first dataset: 45 teleoperated episodes of picking up a stuffed toy and dropping it into a bowl, recorded in LeLab. No policy has been trained or evaluated yet, and nothing has been run on the arms from this repo.
+Project 01 is complete. An ACT policy trained on 45 teleoperated demonstrations picks up a stuffed toy and drops it into a bowl in **10 of 20 trials** on the real arm: toy from three marked spots, bowl at a fixed position, wrist and front cameras, 45-second limit, evaluated in room lighting that differed from the recording sessions. See [`projects/01-baseline-act/results/summary.md`](projects/01-baseline-act/results/summary.md).
+
+Projects 02 and 03 have not started.
 
 ## Hardware
 
@@ -14,6 +16,8 @@ Project 01 has its first dataset: 45 teleoperated episodes of picking up a stuff
 | Follower arm (white) | `shishya` |
 | Dev machine | macOS |
 | Local compute device | `mps` (Apple GPU) |
+| Cameras | `wrist` (on the follower's gripper) and `front` (fixed, facing the arm), both 640x480 at 30 fps |
+| Cloud training | Hugging Face Jobs, `a10g-large` |
 
 The setup as a whole is called gurukul.
 
@@ -67,7 +71,7 @@ On macOS, LeRobot commands print an `objc` warning about duplicate `AVFFrameRece
 
 | Project | Status |
 |---|---|
-| `projects/01-baseline-act` | Dataset recorded; training and evaluation not started |
+| `projects/01-baseline-act` | Complete: 10/20 on the real arm ([summary](projects/01-baseline-act/results/summary.md)) |
 | `projects/02-serving-observability` | Not started |
 | `projects/03-ray-curation` | Not started |
 
