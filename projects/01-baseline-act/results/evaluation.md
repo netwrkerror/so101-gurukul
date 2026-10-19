@@ -7,7 +7,7 @@ Step 6 of the brief. The schedule and protocol below were written before any tri
 - Policy: `causalerror/act-so101-toy-to-bowl` at revision `2ecffdd421f46c20f5220c3ca9c4e1fca988a646` (the final checkpoint of run 4, chosen before evaluation), converted for LeRobot 0.6.0 by removing `"dtype": null` from `config.json`. Local copy: `outputs/act_final/`.
 - Run with: `lerobot-rollout`, episodic strategy, LeRobot 0.6.0 (commit `30da8e687a6dfc617fcd94afc367ac7071c376ce`), on `mps`.
 - Config: `configs/eval_act.json`.
-- Trial recordings: `causalerror/rollout_act_so101_toy_to_bowl_eval` (private).
+- Trial recordings: `causalerror/rollout_act_so101_toy_to_bowl_eval_<timestamp>` (private; LeRobot appends the session's timestamp). Exact name: TO FILL.
 
 ## Protocol
 
@@ -37,10 +37,18 @@ To fill in on the day:
 
 ## Dry runs (not counted)
 
+2026-10-18, 19:07 to 19:09 MDT, git commit `22676d5`, config `configs/eval_act_dryrun.json`. Blinds closed, evening light: not the recording's lighting, so these say nothing about the success rate. Recordings: `causalerror/rollout_act_so101_toy_to_bowl_dryrun_20261018_190723` (LeRobot appends a timestamp to rollout dataset names).
+
 | Dry run | Spot | Outcome | Notes |
 |---|---|---|---|
-| 1 | A | | |
-| 2 | A | | |
+| 1 | A | TO FILL | Ended with the right arrow after 41.6 s (1,247 frames) |
+| 2 | A | TO FILL | Ran the full 45 s (1,341 frames) |
+
+Pipeline checks from the dry run:
+
+- Policy, both cameras, and the follower connected; the arm returned to its starting position between trials and at the end; both trials uploaded.
+- Keyboard: macOS did not grant `pynput` permission, so LeRobot fell back to terminal keys (arrows, or `n`/`r`/`q`) with the terminal focused. The right arrow worked.
+- Control rate: LeRobot warned "Record loop is running slower (about 19.5 Hz) than the target FPS (30 Hz)" about every 3.3 s. That is one warning per 100-step ACT action chunk: the warning measures a single loop iteration, and the slow one is the step where the network runs (24 ms on `mps`, measured offline). The recorded frame counts show the loop as a whole kept 30 Hz: 1,247 frames in 42 s and 1,341 frames in 45 s of wall-clock time. Offline timing: the inference pipeline takes 2.6 ms on other steps; reading the follower and both cameras and sending a command takes 2.2 ms with the speed cap.
 
 ## Trials
 
