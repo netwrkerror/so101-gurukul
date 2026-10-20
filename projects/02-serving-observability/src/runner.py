@@ -56,8 +56,12 @@ class RunnerConfig(RobotClientConfig):
     start_trial: int = 1
     trials_log: str = "outputs/p02_trials.jsonl"
     metrics_port: int = 9101
-    # Connects everything and runs the trial loop, but never sends policy actions to the arm.
+    # Connects everything and runs the trial loop, but never asks the policy for actions.
     dry_run: bool = False
+    # Shadow mode: the policy predicts as usual (observations out, chunks back, actions
+    # consumed at 30 Hz), but the actions are discarded instead of sent to the arm, which
+    # holds still. Measures serving latency without moving the arm.
+    shadow: bool = False
 
 
 class TrialClient(RobotClient):
@@ -119,7 +123,14 @@ class TrialClient(RobotClient):
         if observation.must_go:
             self.must_go.clear()
 
-    def run_trial(self, duration_s: float, events: dict, dry_run: bool) -> None:
+    def discard_next_action(self) -> None:
+        """Take the next action off the queue without sending it to the arm (shadow mode)."""
+        with self.action_queue_lock:
+            timed_action = self.action_queue.get_nowait()
+        with self.latest_action_lock:
+            self.latest_action = timed_action.get_timestep()
+
+    def run_trial(self, duration_s: float, events: dict, dry_run: bool, shadow: bool = False) -> None:
         """The stock control loop, bounded by a time limit and the operator's keys."""
         dt = self.config.environment_dt
         deadline = time.perf_counter() + duration_s
@@ -144,7 +155,10 @@ class TrialClient(RobotClient):
 
             if not dry_run:
                 if self.actions_available():
-                    last_command = self.control_loop_action()
+                    if shadow:
+                        self.discard_next_action()
+                    else:
+                        last_command = self.control_loop_action()
                 else:
                     self.metrics.empty_queue_steps.inc()
                 if self._ready_to_send_observation():
@@ -218,6 +232,8 @@ def main(cfg: RunnerConfig):
     print(f"\nSession {session}. Metrics: http://127.0.0.1:{cfg.metrics_port}/metrics")
     if cfg.dry_run:
         print("DRY RUN: the policy will not move the arm.")
+    elif cfg.shadow:
+        print("SHADOW: the policy predicts as usual, but its actions are discarded; the arm holds still.")
 
     try:
         while trial <= len(cfg.schedule):
@@ -231,7 +247,7 @@ def main(cfg: RunnerConfig):
             started_at = datetime.now(timezone.utc).isoformat()
             t0 = time.perf_counter()
             metrics.trial_active.set(1)
-            client.run_trial(cfg.trial_time_s, events, cfg.dry_run)
+            client.run_trial(cfg.trial_time_s, events, cfg.dry_run, cfg.shadow)
             metrics.trial_active.set(0)
             duration = time.perf_counter() - t0
 
@@ -258,6 +274,7 @@ def main(cfg: RunnerConfig):
                 "duration_s": round(duration, 2),
                 "ended_by": ended_by,
                 "dry_run": cfg.dry_run,
+                "shadow": cfg.shadow,
             })
 
             if ended_by == "quit":

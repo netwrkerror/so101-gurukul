@@ -1,0 +1,8 @@
+# Allowlist: send nothing to the Docker build except what the policy server image needs.
+# This keeps .env, outputs/, .venv/, blog/, notes.local.md, and git history out of images.
+*
+!pyproject.toml
+!uv.lock
+!projects/02-serving-observability/src/
+!projects/02-serving-observability/configs/
+**/__pycache__

@@ -26,6 +26,7 @@ from metrics import ServerMetrics, serve_metrics
 @dataclass
 class InstrumentedServerConfig(PolicyServerConfig):
     metrics_port: int = 9102
+    metrics_host: str = "127.0.0.1"
 
 
 class InstrumentedPolicyServer(PolicyServer):
@@ -71,7 +72,7 @@ class InstrumentedPolicyServer(PolicyServer):
 def main(cfg: InstrumentedServerConfig):
     logging.info(pformat(asdict(cfg)))
     metrics = ServerMetrics()
-    serve_metrics(cfg.metrics_port)
+    serve_metrics(cfg.metrics_port, cfg.metrics_host)
 
     policy_server = InstrumentedPolicyServer(cfg, metrics)
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
@@ -79,7 +80,7 @@ def main(cfg: InstrumentedServerConfig):
     server.add_insecure_port(f"{cfg.host}:{cfg.port}")
 
     policy_server.logger.info(
-        f"PolicyServer started on {cfg.host}:{cfg.port}; metrics on 127.0.0.1:{cfg.metrics_port}/metrics"
+        f"PolicyServer started on {cfg.host}:{cfg.port}; metrics on {cfg.metrics_host}:{cfg.metrics_port}/metrics"
     )
     server.start()
     try:
