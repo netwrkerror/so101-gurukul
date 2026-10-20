@@ -172,3 +172,30 @@ Dated log of real choices and the reasons for them. Newest entry last.
 - The server binds to `localhost` only: it deserialises incoming data with `pickle`, which is unsafe for anything untrusted.
 
 **Found in the source:** the stock `robot_client` has no trials, time limit, return to start, or recording, and it switches the motors off immediately when stopped. Project 02's step 3 adds a runner in `src/` for these, wrapping `RobotClient` without editing LeRobot.
+
+## 2026-10-19: Project 02 client runner design
+
+**Decision:** Evaluation through the server uses our own runner (`projects/02-serving-observability/src/runner.py`), which subclasses LeRobot's `RobotClient` instead of editing it, with an instrumented server (`src/server.py`) that subclasses `PolicyServer`. Metrics use `prometheus_client` (added to the environment), on localhost ports 9101 (client) and 9102 (server). The runner step now comes before the container step.
+
+**What the runner adds:**
+
+- **Trials:** a fixed A, B, C schedule; each trial has a 45-second limit and starts with the operator's key press.
+- **Fresh starts:** before each trial, both sides are reset. The server's `Ready` call clears its state without reloading the model, and the client's queue and step counter are cleared.
+- **The policy paused between trials,** so the toy is reset next to a still arm.
+- **Safe stops:** after every trial, and on quit or Ctrl+C, the arm moves back to the session's start pose in a straight line over 3 seconds, under the speed cap. Only then does the client disconnect.
+- **Trial log:** one JSON line per trial in `outputs/p02_trials.jsonl`. Outcomes follow the arrow-key rules: `n` after a success, `r` voids a setup mistake, a timeout is a failure. Failure types are added afterwards, as in project 01.
+
+**Behaviour kept from the stock client:** the control loop sends queued actions and asks for a chunk under the same rule. The one change is that the observation is read once at the start of every step, to measure tracking error, and reused if a chunk is due; the stock client reads it only when sending.
+
+**Added after the first real trials:** the runner waits between steps with LeRobot's `precise_sleep`, as `lerobot-rollout` does, instead of the stock client's `time.sleep`. With `time.sleep` the measured loop ran at about 27 Hz (mean period 36.9 ms; 2.7 ms of work per step), because sleeps overshoot by a few milliseconds on macOS. Project 01 ran at 30 Hz, so this keeps the control rate the same between the two evaluations.
+
+**Why:**
+
+- The stock client has no trials, time limit, or reset phase, and cuts motor power on Ctrl+C.
+- In project 02's step 1 dry run, a stuck policy repeated the same motion about six times, and the toy had to be reset next to a moving arm.
+- Running the runner before the container means every later arm run gets these safe stops.
+
+**Dropped, for now:**
+
+- **Recording trials to a dataset:** it needs an observation read and a saved frame every step, which may change loop timing; deferred until it can be measured.
+- **Camera frame age:** LeRobot's camera interface does not expose frame timestamps.

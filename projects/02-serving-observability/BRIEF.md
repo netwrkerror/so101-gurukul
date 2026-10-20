@@ -14,13 +14,13 @@ This project covers the real-time control case: one robot, one server, one machi
 
 ## Steps
 
-Ordered, each one branch and PR. Steps 2 and 6 move the arm.
+Ordered, each one branch and PR. Steps 1, 2, 3, and 6 move the arm (dry runs). Steps 2 and 3 were swapped on 2026-10-19 so that every later arm run uses the runner's safe stops.
 
 | # | Step | Branch | Done when |
 |---|---|---|---|
 | 1 | Async inference setup: add LeRobot's gRPC extra to the environment, run `policy_server` and `robot_client` natively on the Mac (localhost, `mps`) with the project 01 model | `p02/async-setup` | Environment change and `DECISIONS.md` entry merged; a 2-trial dry run completes through the server; client settings chosen to stay as close as possible to project 01's synchronous chunk execution |
-| 2 | Container for the policy server | `p02/container` | A committed Dockerfile builds and serves the policy on CPU; a dry run works with the client on the host. Decide (with measurements) whether evaluation uses the native or the containerized server |
-| 3 | Client runner and metrics | `p02/metrics` | A runner in `src/` wraps LeRobot's `RobotClient` (without editing LeRobot's code) and adds what evaluation needs and the stock client lacks: trials with a 45-second limit, a safe return to the start pose, reset time, and recording if feasible. Client and server export metrics (list below) with `prometheus_client`; overhead measured in the control loop |
+| 2 | Client runner and metrics | `p02/client-runner` | A runner in `src/` wraps LeRobot's `RobotClient` (without editing LeRobot's code) and adds what evaluation needs and the stock client lacks: trials with a 45-second limit, the policy paused during resets, and a safe return to the start pose. Client and server export metrics (list below) with `prometheus_client`; overhead measured in the control loop. Recording trials is deferred (see Out of scope / later) |
+| 3 | Container for the policy server | `p02/container` | A committed Dockerfile builds and serves the policy on CPU; a dry run works through the runner. Decide (with measurements) whether evaluation uses the native or the containerized server |
 | 4 | Prometheus and Grafana | `p02/dashboards` | Docker Compose runs Prometheus and Grafana locally; the dashboard (committed as JSON) shows every metric live during a dry run; one or two alert rules (for example, control rate below target) |
 | 5 | Latency and load characterisation | `p02/latency` | Without counting successes: measured loop period, round-trip latency, and inference time (p50, p99) for the chosen setup, plus at least one deliberate fault (for example, added server delay) and what the dashboard and the arm do |
 | 6 | Evaluation through the served setup | `p02/eval` | 20 trials logged in `results/` under project 01's protocol, compared with project 01's 10/20 |
@@ -28,7 +28,7 @@ Ordered, each one branch and PR. Steps 2 and 6 move the arm.
 
 Metrics, proposed:
 
-- Client: control loop period and deadline misses; action queue depth; time from chunk request to chunk received; age of the camera frames used; commanded versus measured joint position (tracking error); gRPC errors and reconnects; trial outcomes.
+- Client: control loop period and deadline misses; action queue depth, and steps spent waiting with an empty queue; time from chunk request to chunk received; commanded versus measured joint position (tracking error); gRPC errors; trials by how they ended. (Camera frame age was dropped: LeRobot's camera interface does not expose frame timestamps.)
 - Server: observations received; inference time per chunk; queue wait; observation payload size; errors.
 
 ## Definition of done
@@ -73,3 +73,4 @@ Evaluation protocol, unchanged from project 01:
 - Authentication and TLS for gRPC, and replacing `pickle` with a safe serialisation format.
 - Serving several robots from one server, and serving SmolVLA or other larger policies.
 - Re-evaluating project 01 in the recording's daylight.
+- Recording runner trials to a LeRobot dataset, as `lerobot-rollout` does. It needs an extra observation read per step, so its effect on loop timing must be measured first.
