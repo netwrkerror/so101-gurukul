@@ -1,0 +1,25 @@
+{
+  "policy_type": "act",
+  "pretrained_name_or_path": "outputs/act_final",
+  "policy_device": "mps",
+  "client_device": "cpu",
+  "server_address": "localhost:8080",
+  "task": "Pick up the stuffed toy and place it in the bowl",
+  "fps": 30,
+  "actions_per_chunk": 100,
+  "chunk_size_threshold": 0.0,
+  "aggregate_fn_name": "latest_only",
+  "debug_visualize_queue_size": false,
+  "robot": {
+    "type": "so101_follower",
+    "id": "gurukul",
+    "max_relative_target": {
+      "shoulder_pan": 35.0,
+      "shoulder_lift": 45.0,
+      "elbow_flex": 45.0,
+      "wrist_flex": 30.0,
+      "wrist_roll": 25.0,
+      "gripper": 70.0
+    }
+  }
+}

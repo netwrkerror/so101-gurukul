@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Physical AI projects on an SO-ARM101 with LeRobot"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "lerobot[core-scripts,feetech,training]",
+    "lerobot[core-scripts,feetech,training,async]",
 ]
 
 [tool.uv]
