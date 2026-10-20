@@ -1,6 +1,6 @@
 # Project 02: Serving and observability
 
-Status: draft, not yet approved. Items marked TO CONFIRM are proposals.
+Status: approved, 2026-10-19.
 
 ## Goal
 
@@ -10,6 +10,8 @@ Run project 01's ACT policy as a separate policy server that the robot client ca
 
 Real robot deployments rarely run the model inside the control loop. A policy server holds the model (often on a GPU elsewhere), and a lightweight client next to the robot keeps the control loop running at a fixed rate. That split adds a network hop, queues, and timing failures that do not exist in a single process. Observing them (loop rate, deadline misses, queue depth, inference and round-trip latency) is how robotics and ML platform teams keep a fleet healthy and debug a policy that "works in the lab".
 
+This project covers the real-time control case: one robot, one server, one machine. Evaluating policies at scale, with many simulated robots as clients of the same kind of server, is a follow-on (see "Out of scope / later").
+
 ## Steps
 
 Ordered, each one branch and PR. Steps 2 and 6 move the arm.
@@ -18,7 +20,7 @@ Ordered, each one branch and PR. Steps 2 and 6 move the arm.
 |---|---|---|---|
 | 1 | Async inference setup: add LeRobot's gRPC extra to the environment, run `policy_server` and `robot_client` natively on the Mac (localhost, `mps`) with the project 01 model | `p02/async-setup` | Environment change and `DECISIONS.md` entry merged; a 2-trial dry run completes through the server; client settings chosen to stay as close as possible to project 01's synchronous chunk execution |
 | 2 | Container for the policy server | `p02/container` | A committed Dockerfile builds and serves the policy on CPU; a dry run works with the client on the host. Decide (with measurements) whether evaluation uses the native or the containerized server |
-| 3 | Instrumentation | `p02/metrics` | Client and server export metrics (list below) through the OpenTelemetry metrics API with a Prometheus exporter (TO CONFIRM), without editing LeRobot's installed code; overhead measured in the control loop |
+| 3 | Instrumentation | `p02/metrics` | Client and server export metrics (list below) with `prometheus_client`, without editing LeRobot's installed code; overhead measured in the control loop |
 | 4 | Prometheus and Grafana | `p02/dashboards` | Docker Compose runs Prometheus and Grafana locally; the dashboard (committed as JSON) shows every metric live during a dry run; one or two alert rules (for example, control rate below target) |
 | 5 | Latency and load characterisation | `p02/latency` | Without counting successes: measured loop period, round-trip latency, and inference time (p50, p99) for the chosen setup, plus at least one deliberate fault (for example, added server delay) and what the dashboard and the arm do |
 | 6 | Evaluation through the served setup | `p02/eval` | 20 trials logged in `results/` under project 01's protocol, compared with project 01's 10/20 |
@@ -39,7 +41,7 @@ Metrics, proposed:
 Evaluation protocol, unchanged from project 01:
 
 - Same policy (`causalerror/act-so101-toy-to-bowl` at revision `2ecffdd…`, converted for LeRobot 0.6.0), same task string, the same three spots and fixed bowl, `wrist` and `front` cameras at 640x480 and 30 fps, 45-second limit, 7/7/6 trials in the same A, B, C order, the same failure types and arrow-key rules.
-- Same lighting as project 01's evaluation (blinds closed, evening or room light), so that serving is the main change. TO CONFIRM.
+- Same lighting as project 01's evaluation (blinds closed, evening or room light), so that serving is the main change.
 
 ## Inputs and outputs
 
@@ -65,7 +67,8 @@ Evaluation protocol, unchanged from project 01:
 ## Out of scope / later
 
 - Kubernetes: deploying the policy server to a local cluster (kind or minikube).
-- OpenTelemetry traces (for example to Grafana Tempo or Jaeger), following one observation through client and server.
+- OpenTelemetry traces (for example to Grafana Tempo or Jaeger), following one observation through client and server. Metrics start with `prometheus_client` by choice, so adding traces means adding OpenTelemetry instrumentation then (see `DECISIONS.md`).
+- Evaluation at scale in simulation: many simulated robots (LeRobot's optional `aloha`, `pusht`, `libero`, or `metaworld` environments) as clients of the policy server, orchestrated with Ray, building on project 03.
 - Running the server on another machine or in the cloud, with real network latency.
 - Authentication and TLS for gRPC, and replacing `pickle` with a safe serialisation format.
 - Serving several robots from one server, and serving SmolVLA or other larger policies.

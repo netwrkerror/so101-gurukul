@@ -137,3 +137,17 @@ Dated log of real choices and the reasons for them. Newest entry last.
 **Consequence:** The evaluation is not fully like for like with the training data. The result is reported with this condition stated, and a lower success rate than the policy would get in recording-matched light cannot be ruled out. Two dry-run successes at one spot are too few to show the lighting has no effect. Evaluating again in matched light remains an option for later.
 
 **Also changed since recording:** tape marks for the three spots and the bowl outline are now visible in the `front` view. The Intel Homebrew is still installed and should be retired separately.
+
+## 2026-10-19: Project 02 metrics with prometheus_client, traces later
+
+**Decision:** Project 02 instruments the policy server and robot client with `prometheus_client`, scraped by Prometheus and shown in Grafana. OpenTelemetry traces are deferred to a later step.
+
+**Why:** A deliberate choice for simplicity. `prometheus_client` is the smallest dependency that gives Prometheus metrics, and metrics alone answer project 02's questions: loop rate, deadline misses, queue depth, and latency.
+
+**Dropped, for now:** instrumenting through the OpenTelemetry metrics API with a Prometheus exporter. That would let traces be added later without touching the metric code. The accepted cost of choosing `prometheus_client` is that adding traces later means adding OpenTelemetry instrumentation then, and possibly moving the metrics onto it.
+
+## 2026-10-19: Project 02 evaluates in project 01's evaluation lighting
+
+**Decision:** Project 02's 20-trial evaluation runs in the same lighting as project 01's evaluation (blinds closed, evening or room light), not the recording's daylight.
+
+**Why:** Project 02 measures what serving costs. Keeping the lighting the same as the 10/20 run makes serving the main change between the two evaluations.
