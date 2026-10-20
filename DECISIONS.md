@@ -199,3 +199,18 @@ Dated log of real choices and the reasons for them. Newest entry last.
 
 - **Recording trials to a dataset:** it needs an observation read and a saved frame every step, which may change loop timing; deferred until it can be measured.
 - **Camera frame age:** LeRobot's camera interface does not expose frame timestamps.
+
+## 2026-10-20: Project 02 evaluates with the native policy server
+
+**Decision:** The counted evaluation through the served setup uses the native policy server (`src/server.py` with `uv`, policy on `mps`). The container (`projects/02-serving-observability/Dockerfile`) is kept as a validated deliverable, not used for evaluation.
+
+**Why:** In shadow-mode measurements (`projects/02-serving-observability/results/latency_native_vs_container.md`), the containerized server took a mean of 344 ms per chunk against 88 ms natively, so the arm would wait about 0.36 s at every chunk boundary instead of about 0.09 s. Project 01 waited about 0.05 s. Using the container would add a large second difference from project 01, on top of serving itself. Docker on macOS cannot use the Apple GPU, so the container runs ACT on the CPU, inside Docker Desktop's virtual machine.
+
+**Container details:**
+
+- Built from the repo's `uv.lock` in two stages; the build stage has the compiler `evdev` needs.
+- 7.69 GB, mostly torch's CUDA build and NVIDIA's libraries. On Linux the lock resolves torch to CUDA 12.8, so the same image would use an NVIDIA GPU on a Linux GPU machine. That is untested.
+- Runs as a non-root user, with ports published on the host's loopback only and the model mounted read-only.
+- `.dockerignore` is an allowlist, so `.env`, `outputs/`, and private files never reach the build.
+
+**Dropped:** a separate CPU-only lock for a smaller image. It would be a second environment definition, and a torch build that differs from the one used everywhere else.

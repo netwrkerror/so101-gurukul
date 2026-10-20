@@ -96,9 +96,11 @@ class ServerMetrics:
         )
 
 
-def serve_metrics(port: int) -> None:
-    """Expose this process's metrics on localhost only."""
-    start_http_server(port, addr="127.0.0.1")
+def serve_metrics(port: int, addr: str = "127.0.0.1") -> None:
+    """Expose this process's metrics over HTTP. Localhost only unless told otherwise
+    (inside a container the address must be 0.0.0.0, with Docker publishing the port on
+    the host's loopback only)."""
+    start_http_server(port, addr=addr)
 
 
 def save_snapshot(path: Path) -> None:

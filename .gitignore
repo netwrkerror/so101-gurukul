@@ -235,6 +235,9 @@ wandb/
 *.mp4
 *hardware.local.yaml
 
+# LeRobot async inference log files (written to ./logs by the policy server)
+logs/
+
 # macOS Finder metadata
 .DS_Store
 
