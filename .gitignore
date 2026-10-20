@@ -235,5 +235,8 @@ wandb/
 *.mp4
 *hardware.local.yaml
 
+# macOS Finder metadata
+.DS_Store
+
 # blog drafts, kept private until published
 blog/
