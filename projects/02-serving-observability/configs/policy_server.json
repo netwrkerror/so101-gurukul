@@ -1,0 +1,7 @@
+{
+  "host": "localhost",
+  "port": 8080,
+  "fps": 30,
+  "inference_latency": 0.0333,
+  "obs_queue_timeout": 2
+}

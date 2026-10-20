@@ -151,3 +151,24 @@ Dated log of real choices and the reasons for them. Newest entry last.
 **Decision:** Project 02's 20-trial evaluation runs in the same lighting as project 01's evaluation (blinds closed, evening or room light), not the recording's daylight.
 
 **Why:** Project 02 measures what serving costs. Keeping the lighting the same as the 10/20 run makes serving the main change between the two evaluations.
+
+## 2026-10-19: Project 02 async inference setup and client settings
+
+**Decision:** Add LeRobot's `async` extra to the environment (`lerobot[core-scripts,feetech,training,async]`), which brings in `grpcio` and `matplotlib`, and serve the project 01 policy with LeRobot's own `policy_server` and `robot_client` from `lerobot.async_inference`, launched from committed configs in `projects/02-serving-observability/configs/`. Client settings:
+
+| Setting | Value |
+|---|---|
+| `actions_per_chunk` | 100 |
+| `chunk_size_threshold` | 0.0 |
+| `aggregate_fn_name` | `latest_only` |
+| `policy_device` | `mps` |
+| `fps` | 30 |
+| `robot.max_relative_target` | Project 01's per-joint cap |
+
+**Why:**
+
+- The client asks for a new chunk when its action queue falls to `chunk_size_threshold` of a chunk, and blends overlapping chunks with `aggregate_fn_name`. A threshold of 0 means a new chunk is requested only once the queue is empty, so chunks never overlap and are played out whole. That matches project 01's synchronous rollout, which keeps serving as the main difference between the two evaluations.
+- The cost is a short pause at the end of each chunk while the next one is computed, as in project 01, where one step per chunk took about 51 ms. Project 02's metrics will measure it.
+- The server binds to `localhost` only: it deserialises incoming data with `pickle`, which is unsafe for anything untrusted.
+
+**Found in the source:** the stock `robot_client` has no trials, time limit, return to start, or recording, and it switches the motors off immediately when stopped. Project 02's step 3 adds a runner in `src/` for these, wrapping `RobotClient` without editing LeRobot.
