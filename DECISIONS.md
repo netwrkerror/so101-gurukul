@@ -241,3 +241,16 @@ Dated log of real choices and the reasons for them. Newest entry last.
 - **`ChunkRoundTripHigh` false alarm.** It fired early in a native session, because the session's first chunk was slow (the median briefly read 0.45 s) while the window held only one to three chunks. It now also requires at least 5 chunks in the window.
 - **A warm-up request.** The runner now sends one throwaway observation before the first trial, so no trial pays the first-inference cost. The warm-up chunk is kept out of the round-trip metrics and reported separately as `gurukul_client_warmup_seconds`.
 - **Finer loop-period buckets.** Prometheus estimates percentiles by interpolating within a bucket, so with edges at 33.3 and 36 ms, a true mean of 33.4 ms was shown as a p50 of about 34.7 ms. The buckets now step at 32, 33, 33.3, 33.5, 34, 35, and 36 ms, and the dashboard also plots the exact mean.
+
+## 2026-10-24: Project 02 evaluation setup, fixed before the session
+
+**Decision:** Project 02's counted evaluation runs project 01's final checkpoint through the native policy server and the trial runner, under project 01's protocol: 20 trials, the same spots, order, time limit, success rule, and failure types. Its result is reported next to project 01's 10/20, with the differences listed in `projects/02-serving-observability/results/evaluation.md`.
+
+**Differences accepted, and why:**
+
+- **Pause per chunk:** about 65 ms (about 2 steps) at each chunk boundary, against about 51 ms in project 01. Serving cannot avoid it without asking for chunks early, which changes chunk handling (step 5, part B).
+- **A warm-up chunk** before trial 1, so no trial pays the cold-start cost.
+- **Reset between trials** ends on the operator's key, not after a fixed 30 seconds. This affects only the time between trials, not the trials themselves.
+- **No trial recordings:** recording is deferred until its cost to the control loop is measured. The trial log and metrics snapshots are the record.
+
+**Keys:** the runner logs `n` as a success and a timeout as a failure. So unlike project 01, where two failed trials were ended early with the right arrow, every failure runs to the 45-second limit.
