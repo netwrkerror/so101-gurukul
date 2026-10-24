@@ -1,0 +1,16 @@
+# A 2-second scrape interval is short enough to follow what happens within a 45-second
+# trial; Prometheus's default of 15 seconds is not.
+global:
+  scrape_interval: 2s
+  evaluation_interval: 2s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: gurukul-client
+    static_configs:
+      - targets: ["host.docker.internal:9101"]
+  - job_name: gurukul-server
+    static_configs:
+      - targets: ["host.docker.internal:9102"]

@@ -1,0 +1,30 @@
+groups:
+  - name: gurukul
+    rules:
+      - alert: ControlRateLow
+        # Below 28 Hz while a trial runs. Training data and project 01 ran at 30 Hz; with
+        # plain time.sleep the loop ran at about 27 Hz (project 02, step 2).
+        # Only once the trial has been running for the whole rate window: right after a
+        # trial starts, the 10-second window still includes idle time and reads low.
+        expr: rate(gurukul_client_loop_period_seconds_count[10s]) < 28 and on() min_over_time(gurukul_trial_active[12s]) == 1
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: Control loop below 28 Hz during a trial
+          description: "The control loop is running at {{ $value | humanize }} Hz."
+
+      - alert: ChunkRoundTripHigh
+        # 90th percentile over 300 ms. Native server: mean 103 ms; containerized server on
+        # CPU: mean 379 ms (project 02, step 3).
+        # At least 5 chunks in the window, so one slow chunk cannot set it off (in step 4
+        # the first chunk of a native session alone pushed p90 over 300 ms).
+        expr: >
+          histogram_quantile(0.9, sum by (le) (rate(gurukul_client_chunk_round_trip_seconds_bucket[1m]))) > 0.3
+          and on() sum(increase(gurukul_client_chunk_round_trip_seconds_count[1m])) >= 5
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: Chunk round trip p90 above 300 ms
+          description: "90th percentile chunk round trip is {{ $value | humanizeDuration }}."

@@ -71,6 +71,7 @@ class TrialClient(RobotClient):
         super().__init__(config)
         self.metrics = metrics
         self._chunk_requested_at: float | None = None
+        self._warming_up = False
 
     # --- hooks into the stock client, for metrics -------------------------------
 
@@ -83,6 +84,8 @@ class TrialClient(RobotClient):
         return sent
 
     def _aggregate_action_queues(self, incoming_actions, aggregate_fn=None):
+        if self._warming_up:  # the warm-up chunk is kept out of the round-trip metrics
+            return super()._aggregate_action_queues(incoming_actions, aggregate_fn)
         if self._chunk_requested_at is not None:
             self.metrics.chunk_round_trip.observe(time.perf_counter() - self._chunk_requested_at)
             self._chunk_requested_at = None
@@ -90,6 +93,30 @@ class TrialClient(RobotClient):
         return super()._aggregate_action_queues(incoming_actions, aggregate_fn)
 
     # --- trials ------------------------------------------------------------------
+
+    def warm_up(self, timeout_s: float = 15.0) -> float | None:
+        """Request one throwaway chunk, so no trial pays the cost of the first inference.
+
+        The first chunk after the server loads the policy is slow (one-off GPU setup); in
+        the step 4 shadow sessions it reached about 0.45 s natively and 0.9 s in the
+        container. The chunk is discarded: the next reset_for_trial clears the queue.
+        Returns the warm-up time in seconds, or None if no chunk arrived in time.
+        """
+        self._warming_up = True
+        try:
+            self.reset_for_trial()
+            start = time.perf_counter()
+            self._send_from(self.robot.get_observation())
+            while time.perf_counter() - start < timeout_s:
+                if self.actions_available():
+                    elapsed = time.perf_counter() - start
+                    self.metrics.warmup.set(elapsed)
+                    return elapsed
+                time.sleep(0.01)
+            return None
+        finally:
+            self._warming_up = False
+            self._chunk_requested_at = None
 
     def reset_for_trial(self) -> None:
         """Forget the previous trial on both sides, so the next one starts fresh."""
@@ -232,8 +259,12 @@ def main(cfg: RunnerConfig):
     print(f"\nSession {session}. Metrics: http://127.0.0.1:{cfg.metrics_port}/metrics")
     if cfg.dry_run:
         print("DRY RUN: the policy will not move the arm.")
-    elif cfg.shadow:
-        print("SHADOW: the policy predicts as usual, but its actions are discarded; the arm holds still.")
+    else:
+        if cfg.shadow:
+            print("SHADOW: the policy predicts as usual, but its actions are discarded; the arm holds still.")
+        print("Warming up the policy server (one throwaway chunk; the arm does not move)...")
+        warmup_s = client.warm_up()
+        print(f"Warm-up chunk took {warmup_s:.2f} s." if warmup_s is not None else "Warm-up chunk did not arrive within 15 s.")
 
     try:
         while trial <= len(cfg.schedule):

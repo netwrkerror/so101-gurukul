@@ -9,9 +9,18 @@ from pathlib import Path
 from prometheus_client import Counter, Gauge, Histogram, generate_latest, start_http_server
 
 # Control-loop timings cluster around 1/30 s, so the buckets are dense there.
-LOOP_BUCKETS = (0.010, 0.020, 0.025, 0.030, 0.0333, 0.036, 0.040, 0.050, 0.075, 0.100, 0.200, 0.500)
+# Fine steps around 33.3 ms so that percentiles, which Prometheus interpolates inside a
+# bucket, are not pulled towards the next bucket edge.
+LOOP_BUCKETS = (
+    0.010, 0.020, 0.025, 0.030, 0.032, 0.033, 0.0333, 0.0335, 0.034, 0.035, 0.036,
+    0.040, 0.050, 0.075, 0.100, 0.200, 0.500,
+)
 WORK_BUCKETS = (0.001, 0.002, 0.005, 0.010, 0.020, 0.0333, 0.050, 0.100, 0.200)
-LATENCY_BUCKETS = (0.010, 0.020, 0.030, 0.040, 0.050, 0.075, 0.100, 0.150, 0.200, 0.300, 0.500, 1.0, 2.0)
+# Chunk latencies measured in step 3 were about 70 to 400 ms, so the buckets are dense there.
+LATENCY_BUCKETS = (
+    0.010, 0.020, 0.030, 0.040, 0.050, 0.060, 0.070, 0.080, 0.090, 0.100,
+    0.125, 0.150, 0.200, 0.250, 0.300, 0.350, 0.400, 0.500, 0.750, 1.0, 2.0,
+)
 TRACKING_BUCKETS = (0.5, 1, 2, 5, 10, 20, 45, 90)
 PAYLOAD_BUCKETS = (1e4, 1e5, 2.5e5, 5e5, 1e6, 2e6, 4e6)
 
@@ -60,6 +69,10 @@ class ClientMetrics:
             "gurukul_client_grpc_errors_total",
             "Failed gRPC calls from the client",
             ["call"],
+        )
+        self.warmup = Gauge(
+            "gurukul_client_warmup_seconds",
+            "Time for the warm-up chunk requested at session start (not counted in round-trip metrics)",
         )
         self.trial_active = Gauge(
             "gurukul_trial_active",

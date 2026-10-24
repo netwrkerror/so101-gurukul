@@ -214,3 +214,30 @@ Dated log of real choices and the reasons for them. Newest entry last.
 - `.dockerignore` is an allowlist, so `.env`, `outputs/`, and private files never reach the build.
 
 **Dropped:** a separate CPU-only lock for a smaller image. It would be a second environment definition, and a torch build that differs from the one used everywhere else.
+
+## 2026-10-20: Project 02 metrics stack
+
+**Decision:** Prometheus (`prom/prometheus:v3.5.0`) and Grafana (`grafana/grafana:12.1.0`) run with Docker Compose from `projects/02-serving-observability/observability/`.
+
+- **Scraping:** Prometheus scrapes the runner (9101) and the policy server (9102) every 2 seconds, through `host.docker.internal`, because the runner and server run natively on the Mac.
+- **Ports:** both tools are published on `127.0.0.1` only.
+- **Grafana setup:** the data source and the dashboard (`grafana/dashboards/gurukul.json`) are provisioned from files. The admin password comes from `GRAFANA_ADMIN_PASSWORD` in `.env`. Anonymous access and sign-up are off.
+- **Alert rules:**
+  - `ControlRateLow`: under 28 Hz for 10 seconds during a trial.
+  - `ChunkRoundTripHigh`: the 90th percentile of the chunk round trip over 300 ms for 10 seconds.
+- **Finer histogram buckets:** the latency buckets now step every 10 ms from 10 to 100 ms, then 125, 150, 200, 250, 300, 350, 400, 500 ms, and up, so percentiles in the measured range are reported more precisely.
+
+**Why:**
+
+- **The 2-second scrape interval:** a 45-second trial needs more than three samples; Prometheus's default is 15 seconds.
+- **28 Hz:** training and project 01 ran at 30 Hz, and the `time.sleep` problem in step 2 showed up as about 27 Hz.
+- **300 ms:** the native server's round trip averaged 103 ms and the containerized server's 379 ms (step 3), so the threshold separates the two.
+- **Pinned versions:** reproducible, and released long enough ago to be stable.
+- **Localhost only, and the password kept out of git,** following the repo's rules.
+
+**Changed after the first dashboard sessions (2026-10-24):**
+
+- **`ControlRateLow` false alarm.** It went pending at the start of every trial: the 10-second rate window still covered idle time, and the rate read as low as 1.0 Hz. It now applies only once the trial has been active for the last 12 seconds.
+- **`ChunkRoundTripHigh` false alarm.** It fired early in a native session, because the session's first chunk was slow (the median briefly read 0.45 s) while the window held only one to three chunks. It now also requires at least 5 chunks in the window.
+- **A warm-up request.** The runner now sends one throwaway observation before the first trial, so no trial pays the first-inference cost. The warm-up chunk is kept out of the round-trip metrics and reported separately as `gurukul_client_warmup_seconds`.
+- **Finer loop-period buckets.** Prometheus estimates percentiles by interpolating within a bucket, so with edges at 33.3 and 36 ms, a true mean of 33.4 ms was shown as a p50 of about 34.7 ms. The buckets now step at 32, 33, 33.3, 33.5, 34, 35, and 36 ms, and the dashboard also plots the exact mean.

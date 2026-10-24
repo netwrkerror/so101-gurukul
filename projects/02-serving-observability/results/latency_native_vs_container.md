@@ -39,3 +39,8 @@ The counted evaluation (step 6) uses the native server. See `DECISIONS.md`, 2026
 - One trial per server; the first chunk includes warm-up.
 - Before the container session, the front camera was found pointing away from the scene, with an object in front of the lens. When the native session ran is earlier, and the camera may already have been out of position then. Latency does not depend on the view, but the predicted actions do; they were discarded in shadow mode.
 - After the container session the front camera was reset. Compared with the first front frame of recorded episode 0, the arm fills about 32% of the frame height against about 40%, and the bowl is further into the frame: the camera is slightly further back and turned slightly right. To be corrected before the counted evaluation.
+
+## Later observations (step 4)
+
+- **The native figures above include a cold start.** The first chunk after the server loads the policy is slow (about 0.44 s natively). With a warm-up request before the first trial, the native round trip averaged 74 ms over 28 chunks, all between 60 and 90 ms (`dashboards.md`), against the 103 ms mean measured here.
+- **Deadline misses in the container session.** In a later container session watched on the dashboard, the client's work per step reached about 30 to 40 ms at p99, with 2 deadline misses. That is consistent with the observation flood described above.

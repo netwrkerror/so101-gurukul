@@ -10,7 +10,7 @@ Hands-on physical AI projects on a Seeed Studio SO-ARM101 Pro (leader + follower
 
 ### Plan first
 
-- Before writing or changing code, propose a plan: what you will change, why, which files, and how Aakash can verify it. Then stop and wait for approval.
+- Before writing or changing code, propose a plan: what you will change, why, which files, and how the maintainer can verify it. Then stop and wait for approval.
 - Each project starts from its `projects/<nn-name>/BRIEF.md`. If the brief is missing or unclear, ask before building.
 - Keep changes small: one concept per branch and PR, small enough to read in full.
 - If a request is ambiguous, ask one question instead of guessing.
@@ -19,8 +19,8 @@ Hands-on physical AI projects on a Seeed Studio SO-ARM101 Pro (leader + follower
 ### Who runs what
 
 - Claude writes and edits files, and proposes commands, branch names, commit messages, and PR text.
-- Aakash runs the commands. Do not execute shell commands unless he approves that specific command.
-- Never run anything that moves the arm, powers motors, or writes calibration. Give the command and say what the arm will physically do, so Aakash can clear the workspace and keep a hand near the power switch.
+- The maintainer runs the commands. Do not execute shell commands unless the maintainer approves that specific command.
+- Never run anything that moves the arm, powers motors, or writes calibration. Give the command and say what the arm will physically do, so the maintainer can clear the workspace and keep a hand near the power switch.
 - Never run `git push`, force operations, or anything that deletes data. Propose them.
 
 ### Git conventions
@@ -50,8 +50,8 @@ Hands-on physical AI projects on a Seeed Studio SO-ARM101 Pro (leader + follower
 
 - Tokens and keys live in `.env`, which is gitignored. Never print, log, or commit them. Commit a `.env.example` with names only.
 - No DISH / EchoStar code, data, configs, internal names, or screenshots anywhere in this repo.
-- Before any dataset is made public, remind Aakash to review camera frames for anything identifying in the background (faces, documents, screens, mail, the room).
-- New Hub datasets and models are created private. Making one public is Aakash's explicit decision.
+- Before any dataset is made public, remind the maintainer to review camera frames for anything identifying in the background (faces, documents, screens, mail, the room).
+- New Hub datasets and models are created private. Making one public is the maintainer's explicit decision.
 - `notes.local.md` is private and gitignored. Do not copy its contents into committed files.
 - Never write absolute home-directory paths into committed files. Use `~` or repo-relative paths. Machine-specific paths go in the gitignored `common/hardware.local.yaml`. Check the staged diff for `/Users/` before proposing any commit.
 
@@ -106,7 +106,7 @@ These refine the sections above. Where they differ, this section wins.
 
 - Read-only shell commands (`git status`, `git diff`, `git log`, `ls`, searching or reading the installed LeRobot source) do not need approval. All other shell commands do.
 - Docs-only edits need a one-line statement of the change, not a full plan.
-- Local git commands (branch, add, commit, and the rest) are proposed by Claude and run by Aakash.
+- Local git commands (branch, add, commit, and the rest) are proposed by Claude and run by the maintainer.
 - Hub uploads are propose-only and always private.
 - Machine-specific values (ports, camera indexes) live in `common/hardware.local.yaml`, which is gitignored. A committed `common/hardware.example.yaml` shows the keys without real values.
 - `results/` holds committed summaries and failure logs. Raw outputs, videos, and checkpoints go to the Hub.
