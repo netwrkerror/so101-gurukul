@@ -12,6 +12,8 @@ import logging
 import time
 from concurrent import futures
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from pathlib import Path
 from pprint import pformat
 
 import draccus
@@ -20,19 +22,26 @@ from lerobot.async_inference.configs import PolicyServerConfig
 from lerobot.async_inference.policy_server import PolicyServer
 from lerobot.transport import services_pb2_grpc  # type: ignore
 
-from metrics import ServerMetrics, serve_metrics
+from metrics import ServerMetrics, save_snapshot, serve_metrics
 
 
 @dataclass
 class InstrumentedServerConfig(PolicyServerConfig):
     metrics_port: int = 9102
     metrics_host: str = "127.0.0.1"
+    # Fault injection for step 5: extra seconds added to every chunk's inference, inside the
+    # timed section, to simulate a slow server. 0 disables it.
+    fault_delay_s: float = 0.0
+    # Where a metrics snapshot is written when the server stops.
+    snapshot_dir: str = "outputs"
 
 
 class InstrumentedPolicyServer(PolicyServer):
-    def __init__(self, config: PolicyServerConfig, metrics: ServerMetrics):
+    def __init__(self, config: InstrumentedServerConfig, metrics: ServerMetrics):
         super().__init__(config)
         self.metrics = metrics
+        self.fault_delay_s = config.fault_delay_s
+        self.metrics.fault_delay.set(self.fault_delay_s)
 
     def SendObservations(self, request_iterator, context):  # noqa: N802
         size = 0
@@ -60,6 +69,8 @@ class InstrumentedPolicyServer(PolicyServer):
     def _predict_action_chunk(self, observation_t):
         start = time.perf_counter()
         try:
+            if self.fault_delay_s > 0:
+                time.sleep(self.fault_delay_s)
             return super()._predict_action_chunk(observation_t)
         except Exception:
             self.metrics.errors.labels("predict").inc()
@@ -82,11 +93,21 @@ def main(cfg: InstrumentedServerConfig):
     policy_server.logger.info(
         f"PolicyServer started on {cfg.host}:{cfg.port}; metrics on {cfg.metrics_host}:{cfg.metrics_port}/metrics"
     )
+    if cfg.fault_delay_s > 0:
+        policy_server.logger.warning(f"FAULT INJECTION: adding {cfg.fault_delay_s:.3f} s to every chunk's inference")
     server.start()
     try:
         server.wait_for_termination()
     except KeyboardInterrupt:
         server.stop(grace=1)
+    finally:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        snapshot = Path(cfg.snapshot_dir) / f"p02_server_metrics_{stamp}.prom"
+        try:
+            save_snapshot(snapshot)
+            policy_server.logger.info(f"Metrics snapshot saved to {snapshot}")
+        except OSError as e:  # for example, no writable outputs/ inside the container
+            policy_server.logger.warning(f"Could not save metrics snapshot to {snapshot}: {e}")
     policy_server.logger.info("Server terminated")
 
 

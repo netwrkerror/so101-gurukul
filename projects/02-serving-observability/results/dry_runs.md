@@ -4,7 +4,7 @@ Not counted in any evaluation. Each checks a setup before it is used for counted
 
 ## 2026-10-19: stock async client, server on the Mac (step 1)
 
-Setup: LeRobot 0.6.0 `policy_server` and `robot_client` from `configs/policy_server.json` and `configs/robot_client.json`, localhost, policy on `mps`, `actions_per_chunk` 100, `chunk_size_threshold` 0.0, project 01's speed cap. Policy: project 01's final checkpoint (`outputs/act_final`). Spot A, bowl on its outline, evening lighting. Session started 19:45 MDT. Client log: `outputs/p02_client_dryrun.log` (local).
+Setup: LeRobot 0.6.0 `policy_server` and `robot_client` from `configs/policy_server.json` and `configs/robot_client.json`, localhost, policy on `mps`, `actions_per_chunk` 100, `chunk_size_threshold` 0.0, project 01's speed cap. Policy: project 01's final checkpoint, in its local copy converted for LeRobot 0.6.0. Spot A, bowl on its outline, evening lighting.
 
 What happened:
 
@@ -23,9 +23,9 @@ Observations:
 
 The first start of `src/runner.py` failed inside LeRobot while connecting to the follower, before any runner code ran: `Failed to write 'Torque_Enable' on id_=4 ... There is no status packet!`. Motor 4 (wrist flex) did not reply on the serial bus when LeRobot switched the motors back on after configuring them. Likely causes: a loose connector on the daisy chain, the servo's overload protection after the long hold in the step 1 dry run, or a one-off dropped reply (LeRobot tries once). Fixed by power-cycling the follower and reseating the cables at motor 4; the next start connected normally. Which cause it was is not known.
 
-## 2026-10-20 02:19 UTC (2026-10-19 evening MDT): runner, dry-run mode (step 2)
+## 2026-10-19: runner, dry-run mode (step 2)
 
-Setup: `src/server.py` and `src/runner.py` with `configs/runner.json`, `--dry_run=true --schedule="[A,B]"`, so the policy never moved the arm. Log: `outputs/p02_trials_dryrun.jsonl` (local).
+Setup: `src/server.py` and `src/runner.py` with `configs/runner.json`, `--dry_run=true --schedule="[A,B]"`, so the policy never moved the arm.
 
 | Trial | Spot | Ended by | Duration |
 |---|---|---|---|
@@ -34,9 +34,9 @@ Setup: `src/server.py` and `src/runner.py` with `configs/runner.json`, `--dry_ru
 
 The session connected to the follower, both cameras, and the server; waited for the start key; reset between trials; honoured the n key; ended trial 2 at the limit; logged both trials; and disconnected. Metrics were not captured from this session, so the runner now saves a snapshot of its metrics when a session ends.
 
-## 2026-10-20 02:27 UTC (2026-10-19 evening MDT): runner, two real trials (step 2)
+## 2026-10-19: runner, two real trials (step 2)
 
-Setup: as the dry-run mode session, without `--dry_run`, `--schedule="[A,A]"`. Logs: `outputs/p02_trials_dryrun.jsonl`, `outputs/p02_runner_dryrun.log`, metrics snapshot `outputs/p02_client_metrics_20261020T022649Z.prom` (all local).
+Setup: as the dry-run mode session, without `--dry_run`, `--schedule="[A,A]"`.
 
 | Trial | Spot | What happened | Logged as |
 |---|---|---|---|
@@ -59,11 +59,22 @@ Finding: the loop ran at about 27 Hz because Python's `time.sleep` overshoots by
 
 The "Error receiving actions: Channel closed" at the end of the session is the chunk receiver's pending call being cancelled when the client closes its connection. Harmless.
 
-## 2026-10-20 02:35 UTC: loop timing after switching to `precise_sleep` (step 2)
+## 2026-10-19: loop timing after switching to `precise_sleep` (step 2)
 
-Setup: runner in dry-run mode, one 45-second trial, policy not moving the arm. Metrics snapshot `outputs/p02_client_metrics_20261020T023520Z.prom` (local).
+Setup: runner in dry-run mode, one 45-second trial, policy not moving the arm.
 
 - Loop period: mean 33.35 ms over 1,349 steps (29.98 Hz; target 33.33 ms). Every step fell in the 33.3 to 36 ms bucket.
 - Work per step: mean 1.36 ms (lower than with the policy running, since no actions or observations are sent in dry-run mode); 0 deadline misses.
 
 The fix holds the loop at 30 Hz. With the policy running, the work per step was 2.7 ms, well inside the 33 ms budget, so the same should hold; to be confirmed in the next session with the policy.
+
+## Sources
+
+Session IDs are the UTC start time of each runner session. They match the trial-log entries and metrics snapshots kept locally under `outputs/` (gitignored, not in this repo).
+
+| Section | Session ID |
+|---|---|
+| Stock async client (step 1) | none: the stock client has no sessions; it wrote only a client log |
+| Runner, dry-run mode | `20261020T021913Z` |
+| Runner, two real trials | `20261020T022649Z` |
+| Loop timing after `precise_sleep` | `20261020T023520Z` |

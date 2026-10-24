@@ -1,11 +1,10 @@
 # Native against containerized policy server (step 3)
 
-Measured on 2026-10-20 (evening of 2026-10-19 MDT), one 45-second shadow-mode trial per server: the policy predicted as usual and the runner consumed its actions at 30 Hz, but discarded them, so the arm held still. Same runner config, spot A, same machine. Percentiles are histogram bucket upper bounds.
+Measured on 2026-10-19, one 45-second shadow-mode trial per server: the policy predicted as usual and the runner consumed its actions at 30 Hz, but discarded them, so the arm held still. Same runner config, spot A, same machine. Percentiles are histogram bucket upper bounds.
 
 | | Native server | Containerized server |
 |---|---|---|
 | How it ran | `src/server.py` with `uv`, policy on `mps` | `gurukul-policy-server:dev` in Docker Desktop (`linux/arm64`), policy on CPU (torch's CUDA build, no GPU) |
-| Session | `20261020T043139Z` | `20261020T044939Z` |
 | Server inference per chunk | mean 88 ms, p50 at most 75 ms, p90 at most 100 ms, max at most 500 ms (n = 15) | mean 344 ms, p50 and p90 at most 500 ms (n = 13) |
 | Chunk round trip (client) | mean 103 ms, p50 and p90 at most 100 ms | mean 379 ms, p50 and p90 at most 500 ms |
 | Steps with an empty queue | 39 over 15 chunks: about 2.6 steps (about 90 ms) per chunk | 140 over 13 chunks: about 11 steps (about 360 ms) per chunk |
@@ -16,8 +15,6 @@ Measured on 2026-10-20 (evening of 2026-10-19 MDT), one 45-second shadow-mode tr
 | Image size | not applicable | 7.69 GB |
 | Container memory (`docker stats`, one sample) | not applicable | 1.04 GiB of a 3.83 GiB limit |
 | Data into the container (`docker stats`) | not applicable | 308 MB |
-
-Snapshots (local, gitignored): `outputs/p02_client_metrics_20261020T043139Z.prom`, `outputs/p02_client_metrics_20261020T044939Z.prom`, `outputs/p02_server_metrics_native.prom`, `outputs/p02_server_metrics_container.prom`.
 
 ## What it means for the arm
 
@@ -43,4 +40,15 @@ The counted evaluation (step 6) uses the native server. See `DECISIONS.md`, 2026
 ## Later observations (step 4)
 
 - **The native figures above include a cold start.** The first chunk after the server loads the policy is slow (about 0.44 s natively). With a warm-up request before the first trial, the native round trip averaged 74 ms over 28 chunks, all between 60 and 90 ms (`dashboards.md`), against the 103 ms mean measured here.
-- **Deadline misses in the container session.** In a later container session watched on the dashboard, the client's work per step reached about 30 to 40 ms at p99, with 2 deadline misses. That is consistent with the observation flood described above.
+- **Deadline misses in the container session.** In a later container session watched on the dashboard, the client's work per step reached about 30 to 40 ms at p99, with 2 deadline misses. The observation flood alone does not explain them: in step 5 the same flood towards the native server cost under 5 ms per step (`latency_and_faults.md`). The cause is not known.
+
+## Sources
+
+Session IDs are the UTC start time of each runner session. They match the trial-log entries and metrics snapshots kept locally under `outputs/` (gitignored, not in this repo).
+
+| Run | Session ID |
+|---|---|
+| Native server | `20261020T043139Z` |
+| Containerized server | `20261020T044939Z` |
+
+The server metrics for these two runs were saved by hand with `curl`, before the server saved its own snapshots on shutdown.
