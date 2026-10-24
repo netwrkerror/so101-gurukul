@@ -6,7 +6,7 @@
     "project-02"
   ],
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "editable": false,
   "refresh": "2s",
   "time": {
@@ -423,7 +423,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Server time to predict one chunk, including pre- and post-processing. Includes the session's warm-up chunk.",
+      "description": "Server time to predict one chunk, including pre- and post-processing. Includes the session's warm-up chunk. 'injected fault delay' is non-zero only during fault-injection experiments.",
       "gridPos": {
         "h": 7,
         "w": 6,
@@ -454,6 +454,15 @@
           "refId": "B",
           "expr": "histogram_quantile(0.9, sum by (le) (rate(gurukul_server_inference_seconds_bucket[1m])))",
           "legendFormat": "p90"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "C",
+          "expr": "gurukul_server_fault_delay_seconds",
+          "legendFormat": "injected fault delay"
         }
       ]
     },

@@ -102,6 +102,10 @@ class ServerMetrics:
             "Size of one serialised observation received by the server",
             buckets=PAYLOAD_BUCKETS,
         )
+        self.fault_delay = Gauge(
+            "gurukul_server_fault_delay_seconds",
+            "Extra delay injected into every chunk's inference (0 = no fault injected)",
+        )
         self.errors = Counter(
             "gurukul_server_errors_total",
             "Errors raised while handling a request",

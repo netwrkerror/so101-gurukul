@@ -74,4 +74,5 @@ Evaluation protocol, unchanged from project 01:
 - Sending one observation per chunk request instead of one per step while the queue is empty (the stock client's behaviour; measured in step 3 as about 250 MB of skipped observations in 45 seconds with the container), and compressing the camera images in each observation (1.84 MB each).
 - Serving several robots from one server, and serving SmolVLA or other larger policies.
 - Re-evaluating project 01 in the recording's daylight.
+- Testing the early-request mitigation (`chunk_size_threshold` above 0) on the arm with a slow server. In shadow mode the server's duplicate filter skipped every early request, because the arm was not moving (step 5, part B).
 - Recording runner trials to a LeRobot dataset, as `lerobot-rollout` does. It needs an extra observation read per step, so its effect on loop timing must be measured first.
