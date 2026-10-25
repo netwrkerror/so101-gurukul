@@ -6,6 +6,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "lerobot[core-scripts,feetech,training,async]",
     "prometheus-client",
+    "ray[default,data]==2.59.0",
 ]
 
 [tool.uv]

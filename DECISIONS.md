@@ -273,3 +273,26 @@ The S2 and S3 policies each get a 20-trial arm evaluation under project 01's pro
 - **No success target:** with 20 trials per evaluation, only a large difference would be meaningful.
 
 **Constraint found while planning:** LeRobot 0.6.0 cannot train on several datasets at once (`LeRobotMultiDataset is not currently implemented`), so S2 and S3 are each built as one merged dataset with `lerobot-edit-dataset`, which needs matching features.
+
+## 2026-10-25: Ray for project 03
+
+**Decision:** Add `ray[default,data]==2.59.0` to the environment. Ray's usage statistics are switched off in this repo's code with `RAY_USAGE_STATS_ENABLED=0`, and the Ray dashboard binds to `127.0.0.1` only.
+
+**Why:**
+
+- **The version:** 2.59.0 (released 2026-10-02) is the newest Ray release with a Python 3.12 wheel for Apple Silicon that is at least two weeks old. Two later point releases from 2026-10-21 were too new.
+- **`data`:** Ray Data reads episodes, applies scoring functions to them in parallel, and writes the results table.
+- **`default`:** the dashboard and Ray's metrics, so the pipeline's tasks, workers, and memory can be watched; the metrics can later be scraped by project 02's Prometheus.
+- **The usage statistics:** Ray sends anonymous usage data to its developers by default. That is off here, in keeping with the repo's privacy rules.
+
+**Open question, tested in step 1:** whether Ray's worker processes inherit `DYLD_FALLBACK_LIBRARY_PATH`, which torchcodec needs on this Mac to decode video (`src/ray_check.py`).
+
+**Found in the first check:**
+
+- **Under `uv run`, Ray 2.59's uv integration** (`RAY_ENABLE_UV_RUN_RUNTIME_ENV`, on by default) copies the repo into `/tmp/ray`, builds a second virtual environment there, and starts workers through `uv run`.
+  - **It cost** 1.8 GB per session.
+  - **Different environment:** the workers ran in a different environment from the locked `.venv`.
+  - **Decoding failed:** they did not have `DYLD_FALLBACK_LIBRARY_PATH`, so video decoding failed in all four.
+  - **Privacy:** the copy respected `.gitignore` (`.env`, `outputs/`, `blog/`, `notes.local.md`, and the hardware file were not copied).
+
+  The integration is switched off in this repo's Ray code, so workers use the `.venv` Python directly. With it off, all four test workers inherited `DYLD_FALLBACK_LIBRARY_PATH` and decoded the first frame of their episode (both cameras, 3 x 480 x 640), each in its own process. Passing the variable explicitly (`--pass-dyld`) was not needed.
