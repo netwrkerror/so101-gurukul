@@ -6,7 +6,9 @@ Hands-on physical AI projects on a Seeed Studio SO-ARM101 Pro (leader and follow
 
 Project 01 is complete. An ACT policy trained on 45 teleoperated demonstrations picks up a stuffed toy and drops it into a bowl in **10 of 20 trials** on the real arm: toy from three marked spots, bowl at a fixed position, wrist and front cameras, 45-second limit, evaluated in room lighting that differed from the recording sessions. See [`projects/01-baseline-act/results/summary.md`](projects/01-baseline-act/results/summary.md).
 
-Projects 02 and 03 have not started.
+Project 02 is complete. The same policy, run as a separate policy server that the robot client calls over gRPC, succeeded in **9 of 20 trials** under project 01's protocol and lighting, against 10/20 running in-process: a difference within chance. The serving path held the 30 Hz control loop with no deadline misses and a 72 ms mean chunk round trip, observed live with Prometheus and Grafana. See [`projects/02-serving-observability/results/summary.md`](projects/02-serving-observability/results/summary.md).
+
+Project 03 has not started.
 
 ## Hardware
 
@@ -72,7 +74,7 @@ On macOS, LeRobot commands print an `objc` warning about duplicate `AVFFrameRece
 | Project | Status |
 |---|---|
 | `projects/01-baseline-act` | Complete: 10/20 on the real arm ([summary](projects/01-baseline-act/results/summary.md)) |
-| `projects/02-serving-observability` | Not started |
+| `projects/02-serving-observability` | Complete: 9/20 through the served setup ([summary](projects/02-serving-observability/results/summary.md)) |
 | `projects/03-ray-curation` | Not started |
 
 ## Repo guide

@@ -1,6 +1,6 @@
 # Project 02: Serving and observability
 
-Status: approved, 2026-10-19.
+Status: complete, 2026-10-24. Result: 9/20 through the served setup, against project 01's 10/20. See `results/summary.md`.
 
 ## Goal
 
