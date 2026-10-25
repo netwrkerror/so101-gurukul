@@ -507,7 +507,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "One serialised observation: two raw camera images plus joint positions.",
+      "description": "One serialized observation: two raw camera images plus joint positions.",
       "gridPos": {
         "h": 7,
         "w": 6,

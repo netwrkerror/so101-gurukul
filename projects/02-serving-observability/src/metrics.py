@@ -99,7 +99,7 @@ class ServerMetrics:
         )
         self.payload = Histogram(
             "gurukul_server_observation_bytes",
-            "Size of one serialised observation received by the server",
+            "Size of one serialized observation received by the server",
             buckets=PAYLOAD_BUCKETS,
         )
         self.fault_delay = Gauge(

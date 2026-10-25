@@ -52,7 +52,7 @@ The 200 ms setting was run as two sessions of two trials (four trials) instead o
 4. **The round-trip alert is borderline at 200 ms.** That delay puts the 90th percentile at about 300 ms, so `ChunkRoundTripHigh` fired for 6 seconds in part A and not at all in part C. This is the alert doing what it says, near its threshold. The rule is unchanged.
 5. **On the arm, pauses of about a quarter of a second did not stop the task.** 3 of 4 trials succeeded at 200 ms and 1 of 2 at no delay, with similar tracking error. With 2 and 4 trials this is not a comparison, only evidence that the task still worked with the pauses.
 6. **The warm-up chunk** took 0.35 to 0.81 s across sessions, the cold-start cost that the warm-up keeps out of trial metrics.
-7. **Shadow mode has a blind spot.** The early-request mitigation (part B) could not be tested in shadow mode, because the server skips observations whose joint positions match the last one, and a still arm always matches. Shadow mode is reliable for latency, but not for behaviour that depends on the robot moving.
+7. **Shadow mode has a blind spot.** The early-request mitigation (part B) could not be tested in shadow mode, because the server skips observations whose joint positions match the last one, and a still arm always matches. Shadow mode is reliable for latency, but not for behavior that depends on the robot moving.
 
 ## Latency of the evaluation setup (native server, no fault)
 

@@ -2,7 +2,7 @@
 
 **Result: 10/20 successes on the real arm.** Task: pick up a stuffed toy from one of three marked spots and drop it into a bowl at a fixed position. Two cameras (`wrist` on the gripper, `front` fixed), 45-second limit per trial, one checkpoint chosen before evaluation. Evaluated in room lighting with the blinds closed, which differed from the daylight during recording.
 
-This page summarises the project. The detailed records are linked in each section.
+This page summarizes the project. The detailed records are linked in each section.
 
 ## What was built
 
