@@ -254,3 +254,22 @@ Dated log of real choices and the reasons for them. Newest entry last.
 - **No trial recordings:** recording is deferred until its cost to the control loop is measured. The trial log and metrics snapshots are the record.
 
 **Keys:** the runner logs `n` as a success and a timeout as a failure. So unlike project 01, where two failed trials were ended early with the right arrow, every failure runs to the 45-second limit.
+
+## 2026-10-24: Project 03 experimental design
+
+**Decision:** Project 03 compares three training sets with ACT, using run 4's settings (100,000 steps, batch 8, seed 1000):
+
+- **S1:** our 45 episodes, which is project 01's existing policy.
+- **S2:** ours plus public SO-100/SO-101 episodes chosen with the Ray pipeline's scores.
+- **S3:** ours plus the same number of public episodes chosen at random from the same compatible pool.
+
+The S2 and S3 policies each get a 20-trial arm evaluation under project 01's protocol, with `lerobot-rollout`. All three are evaluated offline on about 9 new held-out test episodes (3 per spot). There is no success target.
+
+**Why:**
+
+- **The S3 control:** comparing S2 only with S1 would mix two effects, more data and better-chosen data. S3 holds the amount of extra data fixed, so S2 against S3 isolates the curation.
+- **New test episodes:** taking test episodes from the existing 45 would shrink every training set and break the comparison with project 01.
+- **Equal training compute:** the same step count is used for every set. It means fewer passes per episode on the larger sets, which is accepted and noted.
+- **No success target:** with 20 trials per evaluation, only a large difference would be meaningful.
+
+**Constraint found while planning:** LeRobot 0.6.0 cannot train on several datasets at once (`LeRobotMultiDataset is not currently implemented`), so S2 and S3 are each built as one merged dataset with `lerobot-edit-dataset`, which needs matching features.
