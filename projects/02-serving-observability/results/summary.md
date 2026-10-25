@@ -2,7 +2,7 @@
 
 **Result: 9/20 through the served setup, against 10/20 with the policy running in-process** (project 01). Same ACT policy and checkpoint, task (a stuffed toy from three marked spots into a fixed bowl), cameras, lighting, and 45-second limit. A difference of one trial in 20 is within chance: serving did not measurably change the success rate. The serving path held the 30 Hz control loop with no deadline misses, a 72 ms mean chunk round trip, and about 65 ms of pause at each chunk boundary.
 
-This page summarises the project. The detailed records are linked in each section.
+This page summarizes the project. The detailed records are linked in each section.
 
 ## What was built
 

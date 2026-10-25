@@ -122,7 +122,7 @@ Dated log of real choices and the reasons for them. Newest entry last.
 
 **Why:**
 
-- This is the first time the arm moves under a policy, and LeRobot sets no cap by default. The cap stops a sudden jump far outside anything demonstrated, without changing normal behaviour.
+- This is the first time the arm moves under a policy, and LeRobot sets no cap by default. The cap stops a sudden jump far outside anything demonstrated, without changing normal behavior.
 - Recording every trial keeps video evidence for each outcome next to the model and dataset, private like them.
 - 30 seconds of reset is enough to note the outcome and place the toy on the next spot.
 
@@ -169,7 +169,7 @@ Dated log of real choices and the reasons for them. Newest entry last.
 
 - The client asks for a new chunk when its action queue falls to `chunk_size_threshold` of a chunk, and blends overlapping chunks with `aggregate_fn_name`. A threshold of 0 means a new chunk is requested only once the queue is empty, so chunks never overlap and are played out whole. That matches project 01's synchronous rollout, which keeps serving as the main difference between the two evaluations.
 - The cost is a short pause at the end of each chunk while the next one is computed, as in project 01, where one step per chunk took about 51 ms. Project 02's metrics will measure it.
-- The server binds to `localhost` only: it deserialises incoming data with `pickle`, which is unsafe for anything untrusted.
+- The server binds to `localhost` only: it deserializes incoming data with `pickle`, which is unsafe for anything untrusted.
 
 **Found in the source:** the stock `robot_client` has no trials, time limit, return to start, or recording, and it switches the motors off immediately when stopped. Project 02's step 3 adds a runner in `src/` for these, wrapping `RobotClient` without editing LeRobot.
 
@@ -185,7 +185,7 @@ Dated log of real choices and the reasons for them. Newest entry last.
 - **Safe stops:** after every trial, and on quit or Ctrl+C, the arm moves back to the session's start pose in a straight line over 3 seconds, under the speed cap. Only then does the client disconnect.
 - **Trial log:** one JSON line per trial in `outputs/p02_trials.jsonl`. Outcomes follow the arrow-key rules: `n` after a success, `r` voids a setup mistake, a timeout is a failure. Failure types are added afterwards, as in project 01.
 
-**Behaviour kept from the stock client:** the control loop sends queued actions and asks for a chunk under the same rule. The one change is that the observation is read once at the start of every step, to measure tracking error, and reused if a chunk is due; the stock client reads it only when sending.
+**Behavior kept from the stock client:** the control loop sends queued actions and asks for a chunk under the same rule. The one change is that the observation is read once at the start of every step, to measure tracking error, and reused if a chunk is due; the stock client reads it only when sending.
 
 **Added after the first real trials:** the runner waits between steps with LeRobot's `precise_sleep`, as `lerobot-rollout` does, instead of the stock client's `time.sleep`. With `time.sleep` the measured loop ran at about 27 Hz (mean period 36.9 ms; 2.7 ms of work per step), because sleeps overshoot by a few milliseconds on macOS. Project 01 ran at 30 Hz, so this keeps the control rate the same between the two evaluations.
 
@@ -296,3 +296,19 @@ The S2 and S3 policies each get a 20-trial arm evaluation under project 01's pro
   - **Privacy:** the copy respected `.gitignore` (`.env`, `outputs/`, `blog/`, `notes.local.md`, and the hardware file were not copied).
 
   The integration is switched off in this repo's Ray code, so workers use the `.venv` Python directly. With it off, all four test workers inherited `DYLD_FALLBACK_LIBRARY_PATH` and decoded the first frame of their episode (both cameras, 3 x 480 x 640), each in its own process. Passing the variable explicitly (`--pass-dyld`) was not needed.
+
+## 2026-10-25: Project 03 catalog rules
+
+**Decision:** A public dataset is in the compatible pool only if it passes every one of these checks, in this order: LeRobot format v3.0, or v2.1 (convertible with LeRobot's own script); a real robot, not simulation (no simulation words in its name or tags); at least 10 episodes; an SO-100/SO-101 robot type; the same six joints in the same order; 30 fps; at least two 640x480 cameras; a license that allows reuse. Non-commercial licenses are allowed (this is a non-commercial portfolio project); datasets with no license are excluded.
+
+**Why:**
+
+- **v2.1 included:** most public SO-100/SO-101 datasets are v2.1, and LeRobot 0.6.0 ships a v2.1-to-v3.0 converter. v2.0 is excluded.
+- **Real robots only, at least 10 episodes:** simulated data and tiny test uploads are not comparable with our demonstrations.
+- **No license, no use:** without a license there is no permission to reuse.
+
+**Result:** 6,790 tagged datasets (not about 3,800 as first estimated: that listing was capped at 2,000 per tag). 1,006 compatible (93,336 episodes); 807 task-relevant (78,847 episodes).
+
+**Not retried:** 758 metadata fetches failed (mostly `HfHubHTTPError` without a status code, likely rate limiting). They are recorded as failures and not retried; the compatible pool is already far larger than step 3 can download.
+
+**Committed:** only the compatible rows (`results/catalog_compatible.csv`); the table of every dataset stays local.

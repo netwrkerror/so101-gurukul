@@ -1,7 +1,7 @@
 """LeRobot's async policy server with Prometheus metrics.
 
 Subclasses ``lerobot.async_inference.policy_server.PolicyServer`` without changing its
-behaviour, and starts it the same way LeRobot's ``serve`` does.
+behavior, and starts it the same way LeRobot's ``serve`` does.
 
 Run from the repo root:
     uv run python projects/02-serving-observability/src/server.py \

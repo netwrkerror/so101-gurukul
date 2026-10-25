@@ -23,7 +23,7 @@ Problems found, and fixed:
 | "Observation size" repeated "1.8 MB" on every label | Values differ only in the third decimal place | Two decimals |
 | "Scrape targets up" only showed the current state | Single-number panel | State timeline |
 
-Also seen: 2 deadline misses in the container session, with the client's work per step reaching about 30 to 40 ms at p99. I first attributed this to the observation flood (while waiting for each slow chunk, the client serialises and sends a 1.8 MB observation every step). Step 5 contradicts that: with a 400 ms fault on the native server, the client sent 162 such observations with work per step under 5 ms at p99 and no misses (`latency_and_faults.md`). The cause is not known; slower sends into Docker Desktop's virtual machine are a likely, untested explanation.
+Also seen: 2 deadline misses in the container session, with the client's work per step reaching about 30 to 40 ms at p99. I first attributed this to the observation flood (while waiting for each slow chunk, the client serializes and sends a 1.8 MB observation every step). Step 5 contradicts that: with a 400 ms fault on the native server, the client sent 162 such observations with work per step under 5 ms at p99 and no misses (`latency_and_faults.md`). The cause is not known; slower sends into Docker Desktop's virtual machine are a likely, untested explanation.
 
 ## Re-check after the fixes, 2026-10-24
 

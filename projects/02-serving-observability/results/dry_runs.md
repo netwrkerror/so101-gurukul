@@ -32,7 +32,7 @@ Setup: `src/server.py` and `src/runner.py` with `configs/runner.json`, `--dry_ru
 | 1 | A | success (n key) | 15.6 s |
 | 2 | B | timeout | 45.0 s |
 
-The session connected to the follower, both cameras, and the server; waited for the start key; reset between trials; honoured the n key; ended trial 2 at the limit; logged both trials; and disconnected. Metrics were not captured from this session, so the runner now saves a snapshot of its metrics when a session ends.
+The session connected to the follower, both cameras, and the server; waited for the start key; reset between trials; honored the n key; ended trial 2 at the limit; logged both trials; and disconnected. Metrics were not captured from this session, so the runner now saves a snapshot of its metrics when a session ends.
 
 ## 2026-10-19: runner, two real trials (step 2)
 
@@ -57,7 +57,7 @@ Client metrics over about 1,450 control steps (percentiles are bucket upper boun
 
 Finding: the loop ran at about 27 Hz because Python's `time.sleep` overshoots by a few milliseconds per step on macOS. The work itself took 2.7 ms. LeRobot's `precise_sleep` (sleep, then spin for the last few milliseconds), used by `lerobot-rollout` and so by project 01, avoids this; LeRobot's stock async client, which the runner copied, does not. The runner now uses `precise_sleep`. At 27 Hz the policy's actions played out about 10% slower than at training time.
 
-The "Error receiving actions: Channel closed" at the end of the session is the chunk receiver's pending call being cancelled when the client closes its connection. Harmless.
+The "Error receiving actions: Channel closed" at the end of the session is the chunk receiver's pending call being canceled when the client closes its connection. Harmless.
 
 ## 2026-10-19: loop timing after switching to `precise_sleep` (step 2)
 

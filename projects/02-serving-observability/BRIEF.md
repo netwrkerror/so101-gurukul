@@ -70,8 +70,8 @@ Evaluation protocol, unchanged from project 01:
 - OpenTelemetry traces (for example to Grafana Tempo or Jaeger), following one observation through client and server. Metrics start with `prometheus_client` by choice, so adding traces means adding OpenTelemetry instrumentation then (see `DECISIONS.md`).
 - Evaluation at scale in simulation: many simulated robots (LeRobot's optional `aloha`, `pusht`, `libero`, or `metaworld` environments) as clients of the policy server, orchestrated with Ray, building on project 03.
 - Running the server on another machine or in the cloud, with real network latency.
-- Authentication and TLS for gRPC, and replacing `pickle` with a safe serialisation format.
-- Sending one observation per chunk request instead of one per step while the queue is empty (the stock client's behaviour; measured in step 3 as about 250 MB of skipped observations in 45 seconds with the container), and compressing the camera images in each observation (1.84 MB each).
+- Authentication and TLS for gRPC, and replacing `pickle` with a safe serialization format.
+- Sending one observation per chunk request instead of one per step while the queue is empty (the stock client's behavior; measured in step 3 as about 250 MB of skipped observations in 45 seconds with the container), and compressing the camera images in each observation (1.84 MB each).
 - Serving several robots from one server, and serving SmolVLA or other larger policies.
 - Re-evaluating project 01 in the recording's daylight.
 - Testing the early-request mitigation (`chunk_size_threshold` above 0) on the arm with a slow server. In shadow mode the server's duplicate filter skipped every early request, because the arm was not moving (step 5, part B).

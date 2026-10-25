@@ -70,7 +70,7 @@ Purpose: (1) confirm training runs on HF Jobs with the private dataset and a dig
 | GPU memory | 3.7 GB reported by LeRobot |
 | Loss at step 10 and step 50 | 43.3 and 5.92 (step 20: 12.6, step 30: 8.18, step 40: 6.52). Within 1% of the Mac's run 1 at every logged step, with the same seed |
 | Model repo | `causalerror/act-so101-toy-to-bowl-cloud-check`, private (confirmed on the Hub) |
-| Loads with local LeRobot 0.6.0 | Yes, after two adjustments. (1) The 0.6.2 `config.json` adds `"dtype": null`, which 0.6.0 rejects as an unknown field; removing it from a local copy fixes this, and `null` is 0.6.0's behaviour anyway. Every field 0.6.0 expects is present. (2) The saved preprocessor has `device: cuda`; it loads with the device override that `lerobot-rollout` already applies. With both, 0.6.0 loaded the weights and both processors and predicted an action of shape (1, 6) on episode 0, frame 0 |
+| Loads with local LeRobot 0.6.0 | Yes, after two adjustments. (1) The 0.6.2 `config.json` adds `"dtype": null`, which 0.6.0 rejects as an unknown field; removing it from a local copy fixes this, and `null` is 0.6.0's behavior anyway. Every field 0.6.0 expects is present. (2) The saved preprocessor has `device: cuda`; it loads with the device override that `lerobot-rollout` already applies. With both, 0.6.0 loaded the weights and both processors and predicted an action of shape (1, 6) on episode 0, frame 0 |
 | Outcome | Passed: training works on HF Jobs with the digest-pinned image, about 6 times faster than the Mac, with loss within 1% of the Mac's at every logged step, and the checkpoint is usable by local 0.6.0 for evaluation after removing `dtype` |
 
 ## Run 4: full training on Hugging Face Jobs (100,000 steps)
