@@ -1,0 +1,26 @@
+# Step 3, stage 1: trajectory scores (src/score_trajectories.py). No video is downloaded.
+# Joint values are scaled to 0-1 per dataset (0.5th to 99.5th percentile of its actions), so
+# thresholds below are in "fraction of the dataset's joint range".
+
+ours:
+  repo_id: causalerror/so101-toy-to-bowl
+  root: ~/.cache/huggingface/lerobot/causalerror/so101-toy-to-bowl_20261017_130943
+
+catalog: projects/03-ray-curation/results/catalog_compatible.csv  # relevant rows only
+download_dir: outputs/p03_public  # separate from the normal Hugging Face cache
+
+caps:
+  total_gb: 5         # stop before downloading if the planned total is larger
+  file_mb: 200        # a dataset with any larger data file is skipped
+  max_in_flight: 8    # concurrent Hub downloads (rate limiting seen at 32 in the catalog, and at 16 here)
+
+ray:
+  num_cpus: 4
+
+scores:
+  smooth_frames: 5            # moving average before taking speeds and jerk
+  idle_speed: 0.05            # range per second; below this on every joint the arm is idle
+  hesitation_min_s: 0.3       # an idle run this long between first and last motion
+  gripper_low: 0.15           # gripper hysteresis band: an open event is a rise from below
+  gripper_high: 0.3           #   low to above high (our releases open to only 0.34-0.5; our grasp holds at about 0.08)
+  fingerprint_decimals: 2     # whole-episode actions, rounded, hashed to find exact copies
