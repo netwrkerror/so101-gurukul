@@ -2,6 +2,8 @@
 
 Built by `src/score_trajectories.py` with `configs/scoring_stage1.yaml`. No video was downloaded.
 
+Full per-episode table (private): Hub dataset `causalerror/p03-episode-scores`, file `episode_scores.parquet`, revision `97f7a94`.
+
 - Code: git commit `a3e2aa5`; run on the dev machine (local Ray, 4 CPUs)
 - Datasets: ours plus 807 public; ready 804; failed 3
 - Failures by type: cameras not stored as video (cannot merge with ours) 3
