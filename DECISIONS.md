@@ -312,3 +312,29 @@ The S2 and S3 policies each get a 20-trial arm evaluation under project 01's pro
 **Not retried:** 758 metadata fetches failed (mostly `HfHubHTTPError` without a status code, likely rate limiting). They are recorded as failures and not retried; the compatible pool is already far larger than step 3 can download.
 
 **Committed:** only the compatible rows (`results/catalog_compatible.csv`); the table of every dataset stays local.
+
+## 2026-10-25: Project 03 step 3 in two stages, and the trajectory scores
+
+**Decision:** Step 3 is split in two PRs. Stage 1 (`p03/scoring`) scores every task-relevant episode from its joint data only. Stage 2 (`p03/scoring-video`) downloads video only for a shortlist chosen from stage 1, within about 50 GB. The full per-episode table goes privately to the Hub; only our 45 episode rows and per-dataset summaries are committed.
+
+**Why:**
+
+- **Size:** the relevant pool's videos would be about 867 GB; its joint data is about 25 KB per episode at our size (our 45 episodes: 1.1 MB), so about 2 GB for all 78,847 episodes.
+- **Separate concepts:** stage 2 adds decoding of untrusted video, which needs the deferred download-security measures decided first.
+- **Table size:** about 79,000 rows is a run output, not a summary.
+
+**Stage 1 scores** (settings in `projects/03-ray-curation/configs/scoring_stage1.yaml`):
+
+- **Scaling:** joints are scaled to 0 to 1 per dataset, from its own 0.5th to 99.5th action percentiles, because units differ between datasets (ours are in degrees) and most v2.1 datasets (559 of 807) have no `stats.json`.
+- **Scores:** length, idle fraction, hesitations (idle runs of at least 0.3 s between the first and last motion), jerk (median while moving, body joints only), gripper open events, the gap between commanded and measured joints (body joints only), and a fingerprint of the whole episode's raw actions to find exact copies.
+- **Gripper band 0.15 to 0.30, not 0.25 to 0.50:** on our data the release opens the gripper to only 0.34 to 0.50, so the first band counted one opening in 17 of 45 episodes. With 0.15 to 0.30: two openings in 41, one in 3, three in 1. The grasp holds at about 0.08.
+- **Added beyond the brief's list:** the commanded-to-measured gap, as a cheap check for miscalibrated or overloaded arms, and the copy fingerprint.
+
+**Safety of downloads in stage 1:** only `meta/info.json` and `data/*.parquet`, at the commit seen when planning, into `outputs/p03_public/` (not the normal Hugging Face cache); a 200 MB cap per file and a 5 GB cap in total, checked before any download; parsed only as data (pyarrow and json).
+
+**Added after the first plan pass:** datasets whose cameras are not stored as video are skipped. The plan found 10.5 GB of parquet (about 133 KB per episode, against our 24 KB; largest file 111 MB), likely because some datasets keep camera frames as images inside the parquet. LeRobot 0.6.0 merges only datasets whose features have the same `dtype` (`features_equal_for_merge`), and ours stores cameras as video, so such datasets could never join S2 or S3. The catalog did not check this.
+
+**Changed after the first full run:** the copy fingerprint first hashed only the first 30 actions. It marked 28,692 episodes as copies, and 6,711 of the 9,032 shared fingerprints were shared only within one uploader's datasets. I guessed these were episodes that merely start from the same resting pose, and changed the fingerprint to hash the whole episode. That guess was wrong: with whole episodes, 28,684 of 77,441 public episodes (37%) still have an exact copy in another dataset. They are real duplicates, mostly aggregated re-uploads (for example `aailabkaist/so101_coffee_all*` and `merged_all7` under two owners). The whole-episode hash is kept because it is the stricter test.
+
+**Consequence for step 5:** duplicates are removed before S2 is curated and before S3 is drawn at random; otherwise S3 would over-sample copied episodes.
+

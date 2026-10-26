@@ -18,7 +18,8 @@ Ordered, each one branch and PR. Steps 5 (recording the held-out test episodes) 
 |---|---|---|---|
 | 1 | Add Ray to the environment | `p03/environment` | Ray (with Ray Data) pinned in `pyproject.toml`; the lock changes only by adding packages (LeRobot, torch, torchvision, torchcodec unchanged); a local Ray instance starts on the Mac; `DECISIONS.md` entry |
 | 2 | Catalog public datasets | `p03/catalog` | A Ray job reads the metadata of candidate public SO-100/SO-101 datasets (format version, robot type, fps, camera names and sizes, episode count, task strings, license) without downloading videos; a committed catalog of candidates with a compatibility flag for merging with ours |
-| 3 | Episode scoring pipeline | `p03/scoring` | A Ray pipeline computes per-episode scores (below) for our 45 episodes and the compatible public subset; results saved as a table; throughput measured (episodes per minute, locally) |
+| 3a | Episode scoring from joint data | `p03/scoring` | A Ray pipeline downloads only the joint data (`data/*.parquet`, no video) of our 45 episodes and every task-relevant compatible public dataset, and computes per-episode trajectory scores (below) with Ray Data; throughput measured (episodes per minute, locally) |
+| 3b | Episode scoring from video | `p03/scoring-video` | For a shortlist chosen from 3a's scores, within about 50 GB of video, the camera and embedding scores (below); the download-security measures (see Out of scope / later) decided first |
 | 4 | Check the scores against a manual review | `p03/review` | A sample of episodes is labeled by hand (good, bad, why); agreement between the scores and the labels is reported |
 | 5 | Build the training sets and the test set | `p03/curated-set` | S2 and S3 (below) are each merged into one dataset with `lerobot-edit-dataset`, uploaded privately to the Hub, and documented episode by episode; about 9 held-out test episodes (3 per spot) are recorded and uploaded privately |
 | 6 | Retrain ACT | `p03/train` | Two runs, on S2 and on S3, on HF Jobs with run 4's settings (100,000 steps, batch 8, seed 1000), only the dataset changed; checkpoints private on the Hub |
@@ -59,13 +60,14 @@ Evaluation protocol: as in project 01. Same spots, bowl, toy, cameras, task stri
   - Public SO-100/SO-101 datasets on the Hub: 6,790 are tagged `so100` or `so101` (an earlier estimate of about 3,800 came from a listing capped at 2,000 per tag). Step 2's catalog found 1,006 compatible datasets (93,336 episodes), of which 807 (78,847 episodes) are task-relevant. See `results/catalog_summary.md`.
   - Project 01's training config and evaluation protocol.
 - Outputs:
-  - Committed: the Ray pipeline code, the dataset catalog, the episode scores, the manual review labels, and the curated set's episode list.
+  - Committed: the Ray pipeline code, the dataset catalog, the episode scores for our 45 episodes and per-dataset score summaries, the manual review labels, and the curated set's episode list.
+  - Private on the Hub: the full per-episode score table (about 79,000 rows), referenced by revision.
   - Private on the Hub: the merged training sets, the held-out test set, the two retrained checkpoints, and the evaluation recordings.
   - `results/`: throughput, score agreement, offline metric, the evaluation, and a summary.
 
 ## Risks and unknowns
 
-- **LeRobot 0.6.0 cannot train on several datasets at once,** so public episodes must be merged into one dataset first. Merging needs matching features (camera names, image sizes, fps); public datasets with different camera names may need renaming or may be unusable. Step 2 checks this before any scoring.
+- **LeRobot 0.6.0 cannot train on several datasets at once,** so public episodes must be merged into one dataset first. Merging needs matching features (camera names, image sizes, fps); public datasets with different camera names may need renaming or may be unusable. Step 2 checks this before any scoring. The merge also needs the same `robot_type` string and the same camera `dtype` (video, as ours), as checked in LeRobot 0.6.0's `aggregate.py`; public datasets use several robot type names (`so100`, `so101_follower`, and others), so step 5 may need to rewrite it in their `info.json`.
 - **Joint values may not mean the same pose on someone else's arm.** Each SO-101 is calibrated separately, so the same angle on two arms can be a slightly different pose. Their actions may not transfer cleanly to ours.
 - **Other people's scenes differ:** rooms, lighting, objects, camera placement. Public data may help, do nothing, or hurt; all three are valid results.
 - **Format versions:** LeRobot 0.6.0 reads its own v3.0 dataset format; older datasets may need converting or be skipped.
