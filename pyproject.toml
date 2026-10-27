@@ -7,6 +7,9 @@ dependencies = [
     "lerobot[core-scripts,feetech,training,async]",
     "prometheus-client",
     "ray[default,data]==2.59.0",
+    # LeRobot routes torch and torchvision on Linux to PyTorch's CUDA 12.8 index but not torchcodec,
+    # whose PyPI build needs CUDA 13 and fails to load against torch+cu128. Match it here.
+    "torchcodec>=0.11.0,<0.12.0; sys_platform == 'linux'",
 ]
 
 [tool.uv]
@@ -14,4 +17,10 @@ package = false
 required-version = ">=0.12.0"
 
 [tool.uv.sources]
+torchcodec = [{ index = "pytorch-cu128", marker = "sys_platform == 'linux'" }]
 lerobot = { git = "https://github.com/huggingface/lerobot.git", rev = "30da8e687a6dfc617fcd94afc367ac7071c376ce" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
