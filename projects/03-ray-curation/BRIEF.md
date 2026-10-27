@@ -19,7 +19,7 @@ Ordered, each one branch and PR. Steps 5 (recording the held-out test episodes) 
 | 1 | Add Ray to the environment | `p03/environment` | Ray (with Ray Data) pinned in `pyproject.toml`; the lock changes only by adding packages (LeRobot, torch, torchvision, torchcodec unchanged); a local Ray instance starts on the Mac; `DECISIONS.md` entry |
 | 2 | Catalog public datasets | `p03/catalog` | A Ray job reads the metadata of candidate public SO-100/SO-101 datasets (format version, robot type, fps, camera names and sizes, episode count, task strings, license) without downloading videos; a committed catalog of candidates with a compatibility flag for merging with ours |
 | 3a | Episode scoring from joint data | `p03/scoring` | A Ray pipeline downloads only the joint data (`data/*.parquet`, no video) of our 45 episodes and every task-relevant compatible public dataset, and computes per-episode trajectory scores (below) with Ray Data; throughput measured (episodes per minute, locally) |
-| 3b | Episode scoring from video | `p03/scoring-video` | For a shortlist chosen from 3a's scores, within about 50 GB of video, the camera and embedding scores (below); the download-security measures (see Out of scope / later) decided first |
+| 3b | Episode scoring from video | `p03/scoring-video` | A shortlist of whole public datasets (a wrist camera plus a fixed camera, not mostly copies, not policy rollouts) chosen from 3a's scores within about 50 GB; their videos decoded in an isolated container (no network, read-only mounts); per-episode sharpness, brightness, frozen frames, and image embeddings (similarity to our scene, near-duplicate scenes) |
 | 4 | Check the scores against a manual review | `p03/review` | A sample of episodes is labeled by hand (good, bad, why); agreement between the scores and the labels is reported |
 | 5 | Build the training sets and the test set | `p03/curated-set` | S2 and S3 (below) are each merged into one dataset with `lerobot-edit-dataset`, uploaded privately to the Hub, and documented episode by episode; about 9 held-out test episodes (3 per spot) are recorded and uploaded privately |
 | 6 | Retrain ACT | `p03/train` | Two runs, on S2 and on S3, on HF Jobs with run 4's settings (100,000 steps, batch 8, seed 1000), only the dataset changed; checkpoints private on the Hub |
@@ -37,7 +37,7 @@ Training sets:
 
 - **S1, ours only:** the existing 45 episodes. Project 01's policy is already trained on this, so it needs no new run.
 - **S2, ours plus curated public episodes.**
-- **S3, the control: ours plus the same number of public episodes, chosen at random** from the same compatible pool, without curation.
+- **S3, the control: ours plus the same number of public episodes, chosen at random** from the same shortlisted datasets as S2 (step 3b), without curation. LeRobot 0.6.0 merges only whole datasets, so drawing S3 from the whole pool would mean downloading nearly every dataset. As a result, S2 against S3 measures the choice of episodes within the shortlisted datasets, not the choice of datasets.
 
 Comparing S2 with S1 shows whether adding curated data helps. Comparing S2 with S3 shows whether the *curation* helps, beyond simply adding more data. Without S3, a better S2 result could not be credited to the curation rather than to the extra data. It costs a second training run (about $7) and a second 20-trial evaluation.
 
@@ -73,8 +73,9 @@ Evaluation protocol: as in project 01. Same spots, bowl, toy, cameras, task stri
 - **Format versions:** LeRobot 0.6.0 reads its own v3.0 dataset format; older datasets may need converting or be skipped.
 - **Licenses:** each public dataset's license must allow this use. Datasets without a clear license are excluded.
 - **Video decoding inside Ray workers:** torchcodec needs `DYLD_FALLBACK_LIBRARY_PATH` on this Mac. Whether Ray's worker processes inherit it is untested (macOS strips it in some cases, as found in project 01).
-- **Disk and download time:** the relevant pool's videos would be several hundred gigabytes. Step 3 therefore scores trajectories for every relevant episode first, and fetches video only for a shortlist, within about 50 GB.
+- **Disk and download time:** the relevant pool's videos would be several hundred gigabytes. Step 3 therefore scores trajectories for every relevant episode first (3a), and fetches video only for a shortlist of whole datasets, within about 50 GB (3b). Those videos are kept until step 5 builds S2 and S3, then deleted.
 - **Same training budget:** keeping 100,000 steps means fewer passes per episode on a larger dataset. That is deliberate (equal compute), but it may favor the smaller set.
+- **Untrusted files:** public datasets are downloaded at pinned revisions into `outputs/`, not the normal Hugging Face cache, with size caps checked before downloading, and are only parsed as data (never unpickled, never run). Video, parsed by FFmpeg, is decoded only inside the isolated container (step 3b), with Debian's current FFmpeg.
 - **Privacy:** public datasets show other people's rooms. Nothing from them is published in this repo beyond dataset names and scores.
 
 ## Out of scope / later
@@ -83,5 +84,5 @@ Evaluation protocol: as in project 01. Same spots, bowl, toy, cameras, task stri
 - Evaluation at scale in simulation, with Ray running many simulated robots as clients of project 02's policy server.
 - Recording a large new dataset, beyond the held-out test set.
 - Training policies other than ACT, or vision-language-action models.
-- **Hardening downloads of public data** (deferred from step 2): size caps on downloaded files, a separate cache for public data (`HF_HUB_CACHE`), keeping FFmpeg and torchcodec current, optional decoding of untrusted video in a container, and a rule that downloaded files are only parsed as data (never unpickled, never run as code). To be raised again before step 3 downloads public video.
+- **Container decoding beyond step 3b:** step 3b decodes public video in an isolated container. Step 5's merging and step 6's training also read public video, through LeRobot on the Mac or on HF Jobs; whether to isolate those too is decided in step 5's plan.
 - Recovery demonstrations (episodes starting with the toy pushed off its mark), unless the coverage scores single them out as the main gap; then a separate, small, follow-up project.
