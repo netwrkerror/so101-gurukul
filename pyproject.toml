@@ -10,6 +10,8 @@ dependencies = [
     # LeRobot routes torch and torchvision on Linux to PyTorch's CUDA 12.8 index but not torchcodec,
     # whose PyPI build needs CUDA 13 and fails to load against torch+cu128. Match it here.
     "torchcodec>=0.11.0,<0.12.0; sys_platform == 'linux'",
+    # torchcodec's CUDA build also needs NVIDIA's NPP, which torch does not install. 12.3.3 is CUDA 12.8's NPP.
+    "nvidia-npp-cu12==12.3.3.65; sys_platform == 'linux'",
 ]
 
 [tool.uv]

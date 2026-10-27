@@ -52,7 +52,10 @@ COPY projects/03-ray-curation/src/score_video.py projects/03-ray-curation/src/sc
 COPY projects/03-ray-curation/configs/scoring_stage2.yaml projects/03-ray-curation/configs/scoring_stage2.yaml
 
 USER gurukul
+# torchcodec's CUDA 12.8 build loads NVIDIA's NPP, installed by uv under site-packages/nvidia/npp
+# (see DECISIONS.md, 2026-10-26). torch preloads its own NVIDIA libraries but not this one.
 ENV PATH="/app/.venv/bin:$PATH" \
+    LD_LIBRARY_PATH=/app/.venv/lib/python3.12/site-packages/nvidia/npp/lib \
     HOME=/tmp
 ENTRYPOINT ["python", "projects/03-ray-curation/src/score_video.py"]
 CMD ["score", "--only-ours"]
