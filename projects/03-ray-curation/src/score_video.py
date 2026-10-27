@@ -164,6 +164,19 @@ def cmd_score(args, cfg) -> None:
 
 # ---------------------------------------------------------------- summarize (Mac)
 
+def cosine(a, b):
+    """a @ b.T for unit vectors. NumPy's matmul on Apple's Accelerate raises spurious divide, overflow
+    and invalid flags here even when every result is finite, so the flags are silenced and the result
+    is checked instead."""
+    import numpy as np
+
+    with np.errstate(divide="ignore", over="ignore", invalid="ignore"):
+        out = a @ b.T
+    if not np.isfinite(out).all():
+        raise ValueError("non-finite cosine similarity: check the embeddings")
+    return out
+
+
 def role(camera: str) -> str:
     return "wrist" if "wrist" in camera.lower() else "fixed"
 
@@ -193,13 +206,13 @@ def cmd_summarize(args, cfg) -> None:
         e = np.stack(part["emb_first"].to_numpy())
         e = e / np.linalg.norm(e, axis=1, keepdims=True)
         is_ours = (part.repo_id == OURS_ID).to_numpy()
-        sim = e @ e[is_ours].T if is_ours.any() else None
+        sim = cosine(e, e[is_ours]) if is_ours.any() else None
         if sim is not None:
             if is_ours.sum() > 1:
                 sim[np.where(is_ours)[0], np.arange(is_ours.sum())] = -np.inf  # leave one out
             ok.loc[part.index, "dist_to_ours"] = 1 - sim.max(axis=1)
         # Near-duplicate scenes across datasets (the same scene re-uploaded or re-recorded).
-        full = e @ e.T
+        full = cosine(e, e)
         same = part.repo_id.to_numpy()[:, None] == part.repo_id.to_numpy()[None, :]
         full[same] = -np.inf
         ok.loc[part.index, "scene_dup_elsewhere"] = (1 - full.max(axis=1)) < cfg["scoring"]["scene_dup_distance"]
@@ -220,7 +233,7 @@ def cmd_summarize(args, cfg) -> None:
     for rid, g in ok[ok.role == "fixed"].groupby("repo_id"):
         e = np.stack(g["emb_first"].to_numpy())
         e = e / np.linalg.norm(e, axis=1, keepdims=True)
-        spread[rid] = float(1 - (e @ e.T)[np.triu_indices(len(e), 1)].mean()) if len(e) > 1 else np.nan
+        spread[rid] = float(1 - cosine(e, e)[np.triu_indices(len(e), 1)].mean()) if len(e) > 1 else np.nan
     per["scene_spread_fixed"] = pd.Series(spread)
     per.to_csv(RESULTS / "scores_video_by_dataset.csv", float_format="%.4f")
 
