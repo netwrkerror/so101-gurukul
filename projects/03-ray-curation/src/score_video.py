@@ -124,6 +124,8 @@ def cmd_score(args, cfg) -> None:
     import pandas as pd
     import ray
 
+    if not os.environ.get("IMAGE_DIGEST", "").startswith("sha256:"):
+        raise SystemExit("IMAGE_DIGEST is not set: pass -e IMAGE_DIGEST=<image id> so the results record which image ran.")
     video, ours, out = Path("/data/video"), Path("/data/ours"), Path("/data/out")
     roots = [(json.loads((d / "manifest.json").read_text())["repo_id"], d)
              for d in sorted(video.iterdir()) if (d / "manifest.json").exists()]
@@ -141,7 +143,7 @@ def cmd_score(args, cfg) -> None:
     try:
         rows = (ray.data.from_items(items)
                 .map(Scorer, fn_constructor_kwargs={"weights": "/data/weights/resnet18-f37072fd.pth", "cfg": cfg["scoring"]},
-                     concurrency=cfg["scoring"]["num_cpus"], num_cpus=1)
+                     compute=ray.data.ActorPoolStrategy(size=cfg["scoring"]["num_cpus"]), num_cpus=1)
                 .take_all())
     finally:
         ray.shutdown()
@@ -281,7 +283,10 @@ def cmd_summarize(args, cfg) -> None:
         "",
         "- `sharpness`: variance of the Laplacian (higher is sharper), median over 5 frames. `brightness`: mean gray level, 0 to 255.",
         "- `motion_diff` and `frozen_fraction`: change between 10 consecutive frames at the middle of the episode. "
-        "A frozen camera has a low `motion_diff` while the joints move (compare with 3a's idle fraction).",
+        "A frozen camera has a low `motion_diff` while the joints move (compare with 3a's idle fraction). A fixed camera "
+        "watching a still arm also gives identical frames, so `frozen_fraction` alone does not mean a fault.",
+        f"- `scene_dup_elsewhere` uses a cosine distance below {cfg['scoring']['scene_dup_distance']}, stricter than \"same room\": "
+        "our own episodes are often closer than that to each other. It catches near-identical scenes; `dist_to_ours` measures likeness.",
         "- `dist_to_ours`: cosine distance of ResNet-18 ImageNet features of the first frame to the nearest of our episodes. "
         "Lower means a scene that looks more like ours. It is a proxy; it says nothing about the task.",
         "- No public frames are committed or uploaded. Full table (with embeddings): `outputs/p03_video_scores_full.parquet`, "
