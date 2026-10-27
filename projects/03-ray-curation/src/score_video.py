@@ -289,6 +289,12 @@ def cmd_summarize(args, cfg) -> None:
         "our own episodes are often closer than that to each other. It catches near-identical scenes; `dist_to_ours` measures likeness.",
         "- `dist_to_ours`: cosine distance of ResNet-18 ImageNet features of the first frame to the nearest of our episodes. "
         "Lower means a scene that looks more like ours. It is a proxy; it says nothing about the task.",
+        f"- **Sampled, not fully decoded:** each episode-camera item decodes {cfg['scoring']['spread_frames']} frames spread "
+        f"through the episode plus {cfg['scoring']['consecutive_frames']} consecutive frames at the middle, and embeds 2 of them "
+        "(first and middle), with approximate seeking. That is about 15 of roughly 400 frames at our episode lengths, which is "
+        "why scoring is fast; downloading usually takes longer than scoring. The scores describe those samples: a stretch of "
+        "frozen frames or blur elsewhere in an episode can be missed. Step 4's manual review checks whether that matters; "
+        "the counts are settings in `configs/scoring_stage2.yaml`.",
         "- No public frames are committed or uploaded. Full table (with embeddings): `outputs/p03_video_scores_full.parquet`, "
         "uploaded privately to the Hub.",
     ]

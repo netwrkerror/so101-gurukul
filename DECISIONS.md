@@ -338,3 +338,43 @@ The S2 and S3 policies each get a 20-trial arm evaluation under project 01's pro
 
 **Consequence for step 5:** duplicates are removed before S2 is curated and before S3 is drawn at random; otherwise S3 would over-sample copied episodes.
 
+## 2026-10-25: Project 03 step 3b: whole-dataset shortlist, container decoding, and S3 from the same datasets
+
+**Decision:**
+
+- **Shortlist of whole datasets:** public datasets with a wrist camera plus a fixed camera, at most 20% copies of other datasets, at least 10 copy-free episodes, at most 300 episodes, and not named as policy rollouts (`eval`, `rollout`, `inference`). They are ranked by the share of plausible episodes from 3a (at least one gripper opening, 3 to 60 s long), with ties in a seeded random order (seed 1000), and taken in that order within a 50 GB download budget.
+- **Container decoding:** video is decoded only in a container (Debian 13, FFmpeg 7.1) with no network, a read-only root filesystem, the videos, our dataset, and the ResNet-18 weights mounted read-only, and one writable output folder. Nothing else from the Mac is visible.
+- **S3 from the same datasets:** S3's random episodes come from the shortlisted datasets, not from the whole pool.
+- **Videos kept until step 5,** then deleted.
+
+**Why:**
+
+- **Whole datasets:** LeRobot 0.6.0's `lerobot-edit-dataset` merges only whole datasets; episodes are chosen by deleting the rest from a full local copy (`delete_episodes`, `split`). An episode-level sample spread over hundreds of datasets would make step 5 download all of them.
+- **The 300-episode cap and random tie-break:** most datasets tie at a plausible share of 1.0. Breaking ties by size would spend the budget on a few large datasets (the largest eligible had 961 episodes, about 10 GB), so S2 and S3 would come from few scenes.
+- **Rollouts excluded:** 35 eligible datasets are named as recorded policy runs (LeRobot's `eval_` convention, used for project 01's own trials). They are not demonstrations and often contain failures. The 3a distributions include them; the shortlist does not.
+- **The container:** FFmpeg's demuxers and decoders parse untrusted input and have had memory-safety bugs. In the container, a malicious file could reach only the mounted folders and no network. The cost is CPU-only decoding (no MPS in Docker on a Mac) and no Ray dashboard (no network means no published ports).
+- **S3:** drawing it from the whole pool would need nearly every dataset downloaded (hundreds of GB). The cost is in what the comparison measures: S2 against S3 tests the choice of episodes within the shortlist, not the choice of datasets, which the shortlist's ranking already applies to both.
+- **Keeping the videos:** step 5 needs exactly these whole datasets; deleting them after scoring would mean downloading the same 50 GB again.
+
+## 2026-10-26: Match torchcodec to torch's CUDA build on Linux
+
+**Decision:** On Linux, install `torchcodec` from PyTorch's CUDA 12.8 index (`0.11.1+cu128`), the same index LeRobot uses for `torch` and `torchvision`. It is added to `pyproject.toml` as a Linux-only dependency with that source. macOS is unchanged (`0.11.1` from PyPI). Linux also gets `nvidia-npp-cu12==12.3.3.65` (NVIDIA's NPP for CUDA 12.8), and the step 3b image sets `LD_LIBRARY_PATH` to its folder.
+
+**Why:**
+
+- **The failure:** in the step 3b container, torchcodec could not load: `libnvrtc.so.13: cannot open shared object file`. LeRobot 0.6.0's `pyproject.toml` routes `torch` and `torchvision` on Linux to `https://download.pytorch.org/whl/cu128`, but leaves `torchcodec` on PyPI, whose Linux build is made for CUDA 13. Each installs on its own; they fail when loaded together. Project 02's image had the same mismatch but never decoded video.
+- **NPP:** with the matching build, torchcodec then failed on `libnppicc.so.12`. Its CUDA build needs NVIDIA's NPP and NVRTC (its README); torch installs NVRTC but not NPP. 12.3.3.65 is the NPP release of CUDA 12.8. It installs under `site-packages/nvidia/npp/lib`, which torch does not preload, so the image adds that folder to `LD_LIBRARY_PATH`.
+- **The change is small:** re-locking changed only torchcodec's Linux entries and added `nvidia-npp-cu12` on Linux (about 40 lines of `uv.lock`, about 213 MB in the Linux image); every other package version is identical, and the Mac environment does not change.
+- **Rather than PyAV in the container:** PyAV (already in the lock) would have unblocked step 3b alone, but left the Linux environment broken for any later Linux use, such as a cloud training or serving image built from this lock.
+
+**Check:** a smoke test in the container imports torchcodec and its decoder (see the step 3b PR). Project 02's image picks up the fix on its next rebuild.
+
+## 2026-10-27: Project 03 step 3b results, and what they mean for step 5
+
+**Result:** 75 shortlisted datasets plus ours, 11,957 episode-camera items, decoded in the isolated container in 9.0 minutes (1,323 items per minute, 6 CPUs, Debian FFmpeg 7.1.5, torchcodec 0.11.1+cu128). 11,912 scored; 45 failed.
+
+**Findings and decisions:**
+
+- **No public scene resembles ours** (fixed-camera embedding distance: ours to ours median 0.026; public to ours median 0.28; closest public dataset 0.20; none of 75 within our spread). Visual similarity can only rank public data from least to most different. This supports the brief's risk that public data may help, do nothing, or hurt.
+- **Excluded from step 5:** `ryanpennings/so100_pegcrate_e1` (videos shorter than its episode metadata; all 45 failures) and `DorayakiLin/so100_test_Lucas3` (a portrait 640x480 wrist camera; LeRobot merges need the same shape per camera, and the catalog's check counted only its two other cameras).
+- **The catalog's camera check is too loose:** it required at least two 480x640 cameras, not that every camera used in the merge is 480x640. Step 5 checks the shapes of the exact cameras it maps onto ours.

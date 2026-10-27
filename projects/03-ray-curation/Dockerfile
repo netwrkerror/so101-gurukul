@@ -9,13 +9,17 @@
 #
 # Run with no network, a read-only root filesystem, and only these mounts (nothing else from
 # the Mac is visible: not the home folder, .env, the Hugging Face token, or the repo):
-#   docker run --rm --network none --read-only --tmpfs /tmp:size=4g --shm-size=4g --cpus 6 --memory 12g \
-#     -e IMAGE_DIGEST="$(docker image inspect gurukul-video-scoring:dev --format '{{.Id}}')" \
+#   DIGEST=$(docker image inspect gurukul-video-scoring:dev --format '{{.Id}}'); echo "$DIGEST"   # must print sha256:...
+#   docker run --rm --name p03-video-scoring --network none --read-only --tmpfs /tmp:size=4g --shm-size=4g --cpus 6 --memory 12g \
+#     -e IMAGE_DIGEST="$DIGEST" \
 #     -v "$PWD/outputs/p03_video:/data/video:ro" \
 #     -v "$HOME/.cache/huggingface/lerobot/causalerror/so101-toy-to-bowl_20261017_130943:/data/ours:ro" \
 #     -v "$HOME/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth:/data/weights/resnet18-f37072fd.pth:ro" \
 #     -v "$PWD/outputs/p03_video_scores:/data/out" \
-#     gurukul-video-scoring:dev score --only-ours
+#     gurukul-video-scoring:dev score 2>&1 | tee outputs/p03_video_run.log
+#
+# The container has no Ray dashboard (no network). Watch progress in the output, and CPU and
+# memory with `docker stats p03-video-scoring`. Ray's own session logs stay in the in-memory /tmp.
 
 FROM python:3.12-slim-trixie AS build
 
