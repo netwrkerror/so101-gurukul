@@ -2,6 +2,8 @@
 
 Decoded inside the container (`projects/03-ray-curation/Dockerfile`: no network, videos mounted read-only), summarized on the Mac by `src/score_video.py` with `configs/scoring_stage2.yaml`.
 
+Full per-item table with embeddings (private): Hub dataset `causalerror/p03-video-scores`, file `video_scores.parquet`, revision `67fbd9eae3e00075094d3f4af2b60d372bc1dd3f`.
+
 - Code: git commit `21ddb90`; image digest `sha256:b4ef3244dc0deb39c12697af35aef67418152d3eb3d693ad4ac477f21dcdf318`
 - Versions in the container: ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers; torchcodec 0.11.1+cu128; torch 2.11.0+cu128; Ray 2.59.0; aarch64, 6 CPUs
 - Datasets: 76 (ours included)
