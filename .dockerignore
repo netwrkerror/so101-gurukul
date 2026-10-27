@@ -1,8 +1,10 @@
-# Allowlist: send nothing to the Docker build except what the policy server image needs.
+# Allowlist: send nothing to the Docker build except what the images need (policy server, video scoring).
 # This keeps .env, outputs/, .venv/, blog/, notes.local.md, and git history out of images.
 *
 !pyproject.toml
 !uv.lock
 !projects/02-serving-observability/src/
 !projects/02-serving-observability/configs/
+!projects/03-ray-curation/src/score_video.py
+!projects/03-ray-curation/configs/scoring_stage2.yaml
 **/__pycache__

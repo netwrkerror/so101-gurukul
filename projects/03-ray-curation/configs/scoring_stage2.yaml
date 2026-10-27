@@ -1,0 +1,31 @@
+# Step 3b: video scores for a shortlist of whole datasets.
+# src/shortlist.py (on the Mac: choose and download, no decoding) and src/score_video.py
+# (decoding in the container; summary on the Mac).
+
+shortlist:
+  catalog: projects/03-ray-curation/results/catalog_compatible.csv
+  dataset_scores: projects/03-ray-curation/results/scores_by_dataset.csv
+  episode_scores: outputs/p03_episode_scores.parquet   # from 3a (also on the Hub: causalerror/p03-episode-scores)
+  download_dir: outputs/p03_video                     # kept until step 5, then deleted
+  budget_gb: 50                 # total video and metadata to download
+  file_mb: 200                  # a dataset with any larger file is skipped (LeRobot's own maximum is 200 MB)
+  min_episodes: 10              # copy-free episodes
+  max_copy_fraction: 0.2        # datasets that are mostly copies of other datasets (aggregates) are skipped
+  plausible_length_s: [3, 60]   # an episode counts as plausible if its length is in this range
+  plausible_bin: 0.05           # plausible fractions are compared in bins of this size
+  max_episodes: 300             # larger datasets are skipped (about 3 GB each at our video size)
+  seed: 1000                    # random order among datasets that tie
+  rollout_words: [eval, evaluation, rollout, rollouts, inference]   # names of recorded policy runs (LeRobot's eval_ prefix)
+  max_in_flight: 8              # concurrent Hub requests
+
+ours:
+  repo_id: causalerror/so101-toy-to-bowl
+  root: ~/.cache/huggingface/lerobot/causalerror/so101-toy-to-bowl_20261017_130943
+
+scoring:
+  num_cpus: 6                   # Ray workers inside the container
+  spread_frames: 5              # frames spread through the episode, for sharpness and brightness
+  consecutive_frames: 10        # consecutive frames at the middle, for frozen frames
+  frozen_diff: 0.5              # mean absolute gray-level change (0-255) below which two frames count as identical
+  embed_size: 224               # ResNet-18 input size (shorter side resized, then center crop)
+  scene_dup_distance: 0.02      # cosine distance below which two first frames count as the same scene
