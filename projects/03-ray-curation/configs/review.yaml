@@ -1,0 +1,38 @@
+# Step 4: manual review of a sample of episodes, blind to dataset names and scores.
+# src/review_sample.py (Mac: choose the sample, write the labeling page), score_video.py clips
+# (container: decode and re-encode review clips), src/review_agreement.py (Mac: agreement).
+
+seed: 1000
+review_dir: outputs/p03_review         # clips, the labeling page, and the private sample mapping (local only)
+episode_scores: outputs/p03_episode_scores.parquet
+video_scores: outputs/p03_video_scores_full.parquet
+shortlist: projects/03-ray-curation/results/shortlist.csv
+ours: causalerror/so101-toy-to-bowl
+exclude: [ryanpennings/so100_pegcrate_e1, DorayakiLin/so100_test_Lucas3]   # see DECISIONS.md, 2026-10-27
+
+sample:
+  random_public: 36
+  ours: 6
+  extremes_per_criterion: 2
+  repeats: 8             # clips shown twice (the second time among the later clips) to measure self-consistency
+
+# Fixed before labeling: for each score, which direction is "worse". Agreement is reported in this
+# direction only. Extremes are taken from the worse end.
+criteria:
+  idle_fraction:       {worse: high, tag: recording problem}
+  hesitations:         {worse: high, tag: hesitant or slow}
+  jerk:                {worse: high, tag: jerky}
+  gripper_deviation:   {worse: high, tag: task failed}       # |gripper open events - 2|; a clean pick and place has 2
+  action_state_gap:    {worse: high, tag: jerky}
+  sharpness_min:       {worse: low,  tag: camera problem}    # lowest over the episode's cameras, each scaled by its role's median
+  brightness_deviation: {worse: high, tag: camera problem}   # largest |brightness - 128| over the episode's cameras
+  frozen_max:          {worse: high, tag: camera problem}    # highest frozen fraction over the episode's cameras
+  length_deviation:    {worse: high, tag: recording problem} # |log(length / median length of public episodes)|
+
+tags: [task failed, hesitant or slow, jerky, camera problem, recording problem, different task, other]
+
+clips:
+  fps: 10                # playback rate of review clips (real time, fewer frames)
+  height: 240            # each camera scaled to this height, side by side
+  crf: 28                # H.264 quality (higher is smaller)
+  num_cpus: 6
