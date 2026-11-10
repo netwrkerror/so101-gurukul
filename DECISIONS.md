@@ -378,3 +378,38 @@ The S2 and S3 policies each get a 20-trial arm evaluation under project 01's pro
 - **No public scene resembles ours** (fixed-camera embedding distance: ours to ours median 0.026; public to ours median 0.28; closest public dataset 0.20; none of 75 within our spread). Visual similarity can only rank public data from least to most different. This supports the brief's risk that public data may help, do nothing, or hurt.
 - **Excluded from step 5:** `ryanpennings/so100_pegcrate_e1` (videos shorter than its episode metadata; all 45 failures) and `DorayakiLin/so100_test_Lucas3` (a portrait 640x480 wrist camera; LeRobot merges need the same shape per camera, and the catalog's check counted only its two other cameras).
 - **The catalog's camera check is too loose:** it required at least two 480x640 cameras, not that every camera used in the merge is 480x640. Step 5 checks the shapes of the exact cameras it maps onto ours.
+
+## 2026-10-27: Project 03 step 4 review design
+
+**Decision:** One reviewer labels 60 episodes, plus 8 repeated clips:
+
+- 36 random public episodes from the shortlisted datasets, the unbiased part that gives the headline agreement;
+- 18 extremes, the 2 worst episodes for each of 9 criteria, which check that each score's worst cases are real problems;
+- 6 of ours.
+
+The labels are good, bad, or unsure, with reason tags.
+
+- **Blind:** clips are shuffled and named by random ids; the page never sees dataset names or scores.
+- **Directions fixed before labeling:** for each score, which direction counts as worse, recorded in `configs/review.yaml`. Agreement is reported in that direction only.
+- **Clips made in the container:** each sampled episode is decoded in the isolated container and re-encoded as a new H.264 clip (both cameras side by side, 240 pixels high, 10 fps). Only these clips are played on the Mac. The originals stay untrusted and are never opened outside the container.
+- **Clips and the sample mapping stay local** (`outputs/p03_review/`), because they show other people's rooms. Only labels, tags, and notes about the robot and the task are committed.
+
+**Why:**
+
+- **60, not 120:** the maintainer's choice, to start; about an hour of labeling. With 36 random episodes the confidence intervals on agreement will be wide, and the write-up says so.
+- **The extremes are reported separately:** sampling from the worse end inflates any agreement measure, so only the random part gives the headline numbers.
+- **Not the Hub's online visualizer:** it shows dataset names (no blinding), and it often fails to load. Its joint plots would have helped with judging hesitation and jerk, so it stays as a second look after labeling.
+
+## 2026-11-09: Project 03 step 4 results: which scores to use in step 5
+
+**Result:** one blind reviewer labeled 60 episodes plus 8 repeats (`results/review_findings.md`). Of 36 random public episodes, 32 were good, 2 bad, 2 unsure. Self-consistency was 6 of 8. All 6 of ours were good.
+
+**Decision for step 5:**
+
+- **Filters supported by the review:** drop episodes at the extremes of `idle_fraction` and `length_deviation` (their worst cases were real recording problems: 3 of 4 bad, 1 unsure), plus the two inconsistent datasets from step 3b.
+- **Not used to rank episodes:** jerk, sharpness, brightness, frozen frames, hesitations, and the commanded-to-measured gap. Their worst cases were labeled good or unsure, and mostly turned out to be unusual tasks rather than poor demonstrations.
+- **The step 5 plan decides task match and scene similarity** (for example, gripper openings as a single-pick-and-place signal, and `dist_to_ours`). The review showed more task variety than the catalog's keyword filter implied: 6 of 60 episodes were tagged "different task".
+
+**Why:** with only 2 bad episodes among the random ones, no score's agreement could be measured; this is a negative result, not a failure of the review. The useful evidence is the extremes and the notes. The public pool, after the earlier filters, is mostly clean (about 6% bad, roughly 2% to 19%), so the remaining curation question is relevance, not quality.
+
+**Noted:** the clip maker hit Ray's memory limit with 6 workers (retried, all 60 clips completed); one clip was cut short by a camera segment shorter than its metadata.
