@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gurukul — Episode Review</title>
+<!--
+  Step 4 labeling page (project 03). Local only: open outputs/p03_review/label.html, which
+  review_sample.py copies there next to manifest.js and clips/. It loads clip ids and file names
+  only, never dataset names or scores, so labeling stays blind. Labels are kept in this browser's
+  storage as you go; "Export CSV" downloads them. Tags must match configs/review.yaml.
+-->
+<style>
+  :root { --bg:#f7f7f5; --fg:#1d1d1b; --muted:#6b6b66; --line:#d9d9d3; --good:#1f7a3a; --bad:#a3261b; --unsure:#8a6d00; --accent:#2a5bd7; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161615; --fg:#ececea; --muted:#a3a39d; --line:#3a3a37; --good:#5cc27a; --bad:#ef6b5e; --unsure:#e0bf3c; --accent:#7ea2ff; color-scheme: dark; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 system-ui, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+  header { display:flex; flex-wrap:wrap; gap:12px; align-items:baseline; justify-content:space-between; }
+  h1 { font-size:18px; margin:0; }
+  .muted { color:var(--muted); }
+  .bar { height:6px; background:var(--line); border-radius:3px; overflow:hidden; margin:10px 0 14px; }
+  .bar > div { height:100%; background:var(--accent); width:0; }
+  video { width:100%; background:#000; border-radius:6px; display:block; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; align-items:center; }
+  button { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--line); background:transparent; color:var(--fg); cursor:pointer; }
+  button[aria-pressed="true"] { border-color:var(--accent); outline:2px solid var(--accent); }
+  .good[aria-pressed="true"] { background:var(--good); color:#fff; border-color:var(--good); outline:none; }
+  .bad[aria-pressed="true"] { background:var(--bad); color:#fff; border-color:var(--bad); outline:none; }
+  .unsure[aria-pressed="true"] { background:var(--unsure); color:#000; border-color:var(--unsure); outline:none; }
+  textarea { width:100%; box-sizing:border-box; font:inherit; padding:8px; border-radius:6px; border:1px solid var(--line); background:transparent; color:var(--fg); min-height:52px; }
+  kbd { font: 12px ui-monospace, monospace; border:1px solid var(--line); border-radius:4px; padding:0 4px; }
+  .help { font-size:13px; margin-top:14px; }
+  #status { min-height:1.4em; margin-top:8px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Episode review</h1>
+    <span class="muted" id="pos"></span>
+  </header>
+  <div class="bar"><div id="progress"></div></div>
+
+  <p class="muted" style="margin:0 0 10px">Task to judge: pick an object up and place it in a container. Left: fixed camera(s). Right: wrist camera.
+  Judge it as a teaching example for a robot: would you want a policy to copy this?</p>
+
+  <video id="video" controls autoplay loop muted playsinline></video>
+
+  <div class="row" role="group" aria-label="Label">
+    <button class="good" data-label="good">Good <kbd>g</kbd></button>
+    <button class="bad" data-label="bad">Bad <kbd>b</kbd></button>
+    <button class="unsure" data-label="unsure">Unsure <kbd>u</kbd></button>
+    <span style="flex:1"></span>
+    <button data-speed="1">1×</button>
+    <button data-speed="2">2× <kbd>s</kbd></button>
+  </div>
+
+  <div class="row" id="tags" role="group" aria-label="Reasons"></div>
+
+  <div class="row"><textarea id="note" placeholder="Optional note. Describe the robot and the task only, never people or rooms (labels are committed)."></textarea></div>
+
+  <div class="row">
+    <button id="prev">← Previous <kbd>p</kbd></button>
+    <button id="next">Next → <kbd>n</kbd></button>
+    <span style="flex:1"></span>
+    <button id="export">Export CSV</button>
+  </div>
+  <div id="status" class="muted" aria-live="polite"></div>
+
+  <p class="help muted">Keys: <kbd>g</kbd> good, <kbd>b</kbd> bad, <kbd>u</kbd> unsure; <kbd>1</kbd>–<kbd>7</kbd> toggle a reason;
+  <kbd>n</kbd> / <kbd>→</kbd> next, <kbd>p</kbd> / <kbd>←</kbd> previous; <kbd>space</kbd> play or pause; <kbd>r</kbd> restart; <kbd>s</kbd> switch speed.
+  Labels save in this browser as you go. Export when done, and save the file as <code>outputs/p03_review/labels.csv</code>.</p>
+</main>
+
+<script src="manifest.js"></script>
+<script>
+(function () {
+  const TAGS = ["task failed", "hesitant or slow", "jerky", "camera problem", "recording problem", "different task", "other"];
+  const KEY = "gurukul-p03-review-labels";
+  const clips = window.REVIEW_CLIPS || [];
+  const $ = (id) => document.getElementById(id);
+  let labels = {};
+  try { labels = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { labels = {}; }
+  let i = 0, speed = 1;
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(labels)); }
+    catch (e) { $("status").textContent = "Could not save in this browser: export often."; }
+  }
+  function cur() { return clips[i] && (labels[clips[i].clip] ||= { label: "", tags: [], note: "" }); }
+
+  const tagBox = $("tags");
+  TAGS.forEach((t, k) => {
+    const b = document.createElement("button");
+    b.dataset.tag = t; b.innerHTML = `${t} <kbd>${k + 1}</kbd>`;
+    b.onclick = () => toggleTag(t);
+    tagBox.appendChild(b);
+  });
+
+  function render() {
+    if (!clips.length) { $("status").textContent = "No clips found: run review_sample.py, then make the clips in the container."; return; }
+    const c = clips[i], l = cur();
+    const v = $("video");
+    if (v.dataset.src !== c.file) { v.src = c.file; v.dataset.src = c.file; }
+    v.playbackRate = speed;
+    $("pos").textContent = `Clip ${i + 1} of ${clips.length} · ${Object.values(labels).filter((x) => x.label).length} labeled`;
+    $("progress").style.width = `${(100 * (i + 1)) / clips.length}%`;
+    document.querySelectorAll("[data-label]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.label === l.label)));
+    document.querySelectorAll("[data-tag]").forEach((b) => b.setAttribute("aria-pressed", String(l.tags.includes(b.dataset.tag))));
+    document.querySelectorAll("[data-speed]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.speed) === speed)));
+    $("note").value = l.note;
+  }
+  function setLabel(x) { const l = cur(); l.label = x; l.at = new Date().toISOString(); save(); render(); }
+  function toggleTag(t) { const l = cur(); l.tags = l.tags.includes(t) ? l.tags.filter((y) => y !== t) : [...l.tags, t]; save(); render(); }
+  function go(d) {
+    if (d > 0 && !cur().label) { $("status").textContent = "Choose good, bad or unsure first."; return; }
+    $("status").textContent = "";
+    i = Math.max(0, Math.min(clips.length - 1, i + d)); render();
+  }
+  function exportCsv() {
+    const q = (s) => `"${String(s ?? "").replace(/"/g, '""')}"`;
+    const rows = [["clip", "label", "tags", "note", "labeled_at"].join(",")];
+    clips.forEach((c) => { const l = labels[c.clip]; if (l && l.label) rows.push([c.clip, l.label, l.tags.join(";"), l.note, l.at].map(q).join(",")); });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([rows.join("\n") + "\n"], { type: "text/csv" }));
+    a.download = "labels.csv"; a.click();
+    $("status").textContent = `Exported ${rows.length - 1} labels. Move the file to outputs/p03_review/labels.csv.`;
+  }
+
+  document.querySelectorAll("[data-label]").forEach((b) => (b.onclick = () => setLabel(b.dataset.label)));
+  document.querySelectorAll("[data-speed]").forEach((b) => (b.onclick = () => { speed = Number(b.dataset.speed); render(); }));
+  $("prev").onclick = () => go(-1);
+  $("next").onclick = () => go(1);
+  $("export").onclick = exportCsv;
+  $("note").oninput = (e) => { cur().note = e.target.value; save(); };
+
+  document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "TEXTAREA") { if (e.key === "Escape") e.target.blur(); return; }
+    const v = $("video");
+    if (e.key === "g" || e.key === "b" || e.key === "u") setLabel({ g: "good", b: "bad", u: "unsure" }[e.key]);
+    else if (e.key >= "1" && e.key <= String(TAGS.length)) toggleTag(TAGS[Number(e.key) - 1]);
+    else if (e.key === "n" || e.key === "ArrowRight") go(1);
+    else if (e.key === "p" || e.key === "ArrowLeft") go(-1);
+    else if (e.key === " ") { e.preventDefault(); v.paused ? v.play() : v.pause(); }
+    else if (e.key === "r") { v.currentTime = 0; v.play(); }
+    else if (e.key === "s") { speed = speed === 1 ? 2 : 1; render(); }
+  });
+
+  // Resume at the first unlabeled clip.
+  const first = clips.findIndex((c) => !(labels[c.clip] && labels[c.clip].label));
+  i = first === -1 ? 0 : first;
+  render();
+})();
+</script>
+</body>
+</html>

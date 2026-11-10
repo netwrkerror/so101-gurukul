@@ -164,6 +164,72 @@ def cmd_score(args, cfg) -> None:
     print(f"Scored {len(rows)} items in {seconds:.0f} s ({len(rows) / max(seconds, 1e-9) * 60:,.0f} per minute)")
 
 
+# ---------------------------------------------------------------- clips (container), for step 4
+
+REVIEW_CONFIG = Path("projects/03-ray-curation/configs/review.yaml")
+
+
+def make_clip(job: dict) -> dict:
+    """Decode one episode's cameras and write a new side-by-side H.264 clip from the decoded pixels.
+
+    The clip is written by this container's FFmpeg, never copied from the original file, so the
+    original (untrusted) video is only ever parsed in here.
+    """
+    import torch
+    import torch.nn.functional as F
+    from torchcodec.decoders import VideoDecoder
+    from torchcodec.encoders import VideoEncoder
+
+    torch.set_num_threads(1)
+    c = job["clips"]
+    try:
+        panels = []
+        for item in sorted(job["items"], key=lambda i: (role(i["camera"]) != "fixed", i["camera"])):
+            dec = VideoDecoder(item["path"], seek_mode="approximate")
+            stop = item["end"] - 0.5 / item["fps"]
+            frames = dec.get_frames_played_in_range(item["start"], stop, fps=c["fps"]).data  # (N, 3, H, W) uint8
+            h, w = frames.shape[-2:]
+            width = 2 * round(w * c["height"] / h / 2)  # even sizes for yuv420p
+            small = [F.interpolate(frames[i:i + 64].float(), size=(c["height"], width), mode="bilinear", antialias=True)
+                     for i in range(0, len(frames), 64)]
+            panels.append(torch.cat(small).round().clamp(0, 255).to(torch.uint8))
+        n = min(len(p) for p in panels)
+        video = torch.cat([p[:n] for p in panels], dim=3)
+        VideoEncoder(video, frame_rate=c["fps"]).to_file(f"{job.get('out_dir', '/data/out/clips')}/{job['clip']}.mp4", codec="libx264",
+                                                         pixel_format="yuv420p", crf=c["crf"])
+        return {"clip": job["clip"], "frames": n, "cameras": len(panels)}
+    except Exception as e:
+        return {"clip": job["clip"], "error": f"{type(e).__name__}: {str(e).splitlines()[0][:160] if str(e) else ''}"}
+
+
+def cmd_clips(args, cfg) -> None:
+    import ray
+    import yaml
+
+    review = yaml.safe_load(REVIEW_CONFIG.read_text())
+    out = Path("/data/out")
+    sample = [r for r in json.loads((out / "sample.json").read_text()) if r["part"] != "repeat"]
+    roots = {json.loads((d / "manifest.json").read_text())["repo_id"]: d
+             for d in sorted(Path("/data/video").iterdir()) if (d / "manifest.json").exists()}
+    roots[OURS_ID] = Path("/data/ours")
+    listed = {rid: list_episodes(roots[rid], rid) for rid in {r["repo_id"] for r in sample}}
+    jobs = [{"clip": r["clip"], "clips": review["clips"],
+             "items": [i for i in listed[r["repo_id"]] if i["episode_index"] == r["episode_index"]]} for r in sample]
+    (out / "clips").mkdir(exist_ok=True)
+    ray.init(num_cpus=review["clips"]["num_cpus"], include_dashboard=False)
+    t0 = time.time()
+    try:
+        results = ray.data.from_items(jobs).map(make_clip, num_cpus=1).take_all()
+    finally:
+        ray.shutdown()
+    failed = [r for r in results if r.get("error")]
+    (out / "clips_log.json").write_text(json.dumps({"seconds": time.time() - t0, "clips": len(results),
+                                                    "image_digest": os.environ.get("IMAGE_DIGEST"), "results": results}, indent=1))
+    print(f"Made {len(results) - len(failed)} clips in {time.time() - t0:.0f} s; failed {len(failed)}")
+    for r in failed:
+        print("  ", r["clip"], r["error"])
+
+
 # ---------------------------------------------------------------- summarize (Mac)
 
 def cosine(a, b):
@@ -312,14 +378,17 @@ def main() -> None:
     p = sub.add_parser("score", help="decode and score (inside the container only)")
     p.add_argument("--only-ours", action="store_true")
     p.add_argument("--limit", type=int, default=None, help="first N public datasets only")
+    sub.add_parser("clips", help="make the step 4 review clips (inside the container only)")
     q = sub.add_parser("summarize", help="write results from the container's output (on the Mac)")
     q.add_argument("--scores-dir", default="outputs/p03_video_scores")
     args = parser.parse_args()
     cfg = yaml.safe_load(args.config.read_text())
-    if args.cmd == "score":
+    if args.cmd in ("score", "clips"):
         if not Path("/data/video").exists():
-            raise SystemExit("score runs inside the container only (it decodes untrusted video); see the Dockerfile.")
-        cmd_score(args, cfg)
+            raise SystemExit(f"{args.cmd} runs inside the container only (it decodes untrusted video); see the Dockerfile.")
+        if not os.environ.get("IMAGE_DIGEST", "").startswith("sha256:"):
+            raise SystemExit("IMAGE_DIGEST is not set: pass -e IMAGE_DIGEST=<image id> so the results record which image ran.")
+        cmd_score(args, cfg) if args.cmd == "score" else cmd_clips(args, cfg)
     else:
         cmd_summarize(args, cfg)
 

@@ -1,0 +1,69 @@
+clip,part,criterion,repeat_of,repo_id,episode_index,label,tags,note
+8fb1019d605e,extreme,frozen_max,,Askel1419/test_rtx_3_cube,3,good,,task: pick up an object from 3 colored objects and place it in container. picked the middle one. 
+7c77195f946f,extreme,jerk,,Cache-SCA/SO101-pnp_ma_100epi,6,good,,Little too fast while picking / grabbing the object 
+e3a50fe7682f,extreme,frozen_max,,Elvinky/pick_green_block_into_box,76,good,,
+3cce051514b2,extreme,hesitations,,Kunalmod/so101_test_2,34,unsure,camera problem,
+ba021a31a469,extreme,gripper_deviation,,VoicAndrei/so100_cubes_evaluate,1,good,,place small cubes / sponges (9 of these) from a plate to a container one by one. 
+24dcc06a5e5c,extreme,idle_fraction,,VoicAndrei/so100_cubes_noaptea_companiilor_2,4,bad,recording problem,same as one of the previous recordings. 
+3595fdaee43a,extreme,length_deviation,,VoicAndrei/so100_cubes_noaptea_companiilor_2,5,bad,recording problem,no reel. stuck
+37f6a361bce9,extreme,gripper_deviation,,VoicAndrei/so100_cubes_noaptea_companiilor_2,88,good,,"noice. Picked only greens out of blue, red and green cubes/sponges."
+704e85ab217d,extreme,length_deviation,,aaronsu11/so100_instrument,121,unsure,,picked the object but seems like the video cutoff in b/w
+6589602476b2,extreme,idle_fraction,,aswinkumar99/LeRobot-SO101-task2-multiple-sponges-no-distractors-fixed-locations,1,bad,recording problem;other,this is only 1 second and is the ending of clip 6 which we already labeled.. 
+f2f368717a91,extreme,brightness_deviation,,aswinkumar99/LeRobot-SO101-task2-multiple-sponges-no-distractors-fixed-locations,21,good,,loved this one. It had 3 sponges - and it picked and put them in the container one by one. 
+b7cb473fdf37,extreme,brightness_deviation,,aswinkumar99/LeRobot-SO101-task2-multiple-sponges-no-distractors-fixed-locations,22,good,,
+7d1a15db961e,extreme,hesitations,,irlxrd/objects_to_bowl,49,unsure,hesitant or slow;recording problem,busy background with many objects. 
+28a50d51e2bf,extreme,sharpness_min,,jccj/shape_matching_u,18,good,,"already labeled similar puzzle piece placemet, "
+44878c8287fb,extreme,sharpness_min,,jccj/shape_matching_u,33,good,different task,"nice, task - pick the object and place it in its shape-hole like a puzzle piece. "
+77db9dfff3bb,extreme,action_state_gap,,khanhnd61/so101-long-clean,7,good,different task,"wow! task: open the plastic drawer, grab the object and put it in the drawer and close the the drawer. love it. "
+9ece0421460d,extreme,action_state_gap,,khanhnd61/so101-long-clean,9,good,,
+a1bc35daba2b,extreme,jerk,,rlodhi/screw_picking_deprecated,19,unsure,task failed,not sure if the task failed. it took out. a screw from a hole and while moving it it dropped it. 
+57f61a78c214,ours,,,causalerror/so101-toy-to-bowl,0,good,hesitant or slow,
+eb3684ee9e78,ours,,,causalerror/so101-toy-to-bowl,1,good,,this is our own data. 
+ddc01af8c7e6,ours,,,causalerror/so101-toy-to-bowl,16,good,,
+fc580640e0f8,ours,,,causalerror/so101-toy-to-bowl,18,good,,the arm was little hesitant to grab - may be extending its reach but completed the rest of the task smoothly. nice
+e065a73a1336,ours,,,causalerror/so101-toy-to-bowl,20,good,hesitant or slow,
+9b24bf67f820,ours,,,causalerror/so101-toy-to-bowl,40,good,,
+fec6753bea92,random,,,AmberHyunKIM/so101_red_only,17,good,,
+c5afc35dc88e,random,,,Cache-SCA/SO101-pnp_ma_100epi,80,good,hesitant or slow;jerky,
+e1ed33328aff,random,,,CoRL2026-CSI/SO101_teleop_open_lid_100epi,72,good,different task,task: open the lid of a cooking container and place it on the side grabbing it. 
+2b25db90e2b4,random,,,Cornito/so101_test3,11,good,,
+0c31e5583409,random,,,DorayakiLin/yzw_so100_stack_cube_to_test_gr00t_wrist_v2,34,good,different task,stacking red cube on another green cube. 
+87d39c60739d,random,,,DorayakiLin/yzw_so100_stack_cube_to_test_gr00t_wrist_v2,62,good,,
+dc410b384f86,random,,,DylanSh/so101_groot_dataset_visual_check,45,good,,
+c631b4354bde,random,,,DylanSh/so101_groot_dataset_visual_check,89,good,,
+2a63b4d447fe,random,,,Kavin60606/so101_partner_193,89,good,,
+3758398cb2b6,random,,,Kunalmod/so101_test_2,35,good,hesitant or slow,
+680084b971c5,random,,,Loki0929/so100_duck,12,good,,
+193124084bb1,random,,,Loki0929/so100_duck,265,good,,placing different colored ducks in the container. 
+b348ff7ed04b,random,,,Masterji/dataset,15,bad,recording problem,
+f06f4c589eb6,random,,,Mwuqiu/So100_Four_Tasks,6,good,,
+221d130cd773,random,,,TaeJun123123/so101_lego_drop_real_50,22,good,,"this one doesn't use a wrist camera, rather two side cameras. "
+c42627aff5ea,random,,,VoicAndrei/so100_cubes_evaluate,3,good,,already lableed similar -- placing 9 cubes into a bowl
+52dccd1a7909,random,,,aaronsu11/so100_instrument,33,good,different task,based on the clip - the task is to pick up a ting from user's hand and get back to starting position with the tong.
+c8bb2af0afaa,random,,,cezarsolo/so100_data,28,good,,
+ad24ec468a48,random,,,cezarsolo/so100_newdata,6,good,,
+081cd946205d,random,,,jammin0319/so101_tape_to_box,1,good,,
+9cb54578d402,random,,,nepher-robotics/red_cube_3pos,8,good,,
+ec83bf2128b1,random,,,rlodhi/screw_placing_deprecated,25,good,,
+57358e9f143f,random,,,rlodhi/screw_placing_deprecated,42,unsure,camera problem,hardware part - screw/ nut bolt placed in a container. the left camera is still. 
+97505db4cb95,random,,,ryanpennings/so100_pegcrate_c3,14,good,,
+11926369850d,random,,,samsitol/so100_PnPacorn,134,bad,recording problem,
+7a573b84f753,random,,,seonixx/so100_test_v3,30,good,,
+b7e4478cd64b,random,,,shylee/so100_2camRubber,34,good,,
+337733a1f47d,random,,,shylee/so100_cube,190,good,,we labeled a different version of this. looks good
+00cceea45581,random,,,shylee/so100_gauze,85,good,,
+36d04aa7723c,random,,,shylee/so100_gauze,115,unsure,,
+6c0e0628d987,random,,,shylee/so100_gauze,161,good,,
+d63c43ac901f,random,,,shylee/so100_pengripG,223,good,,
+9741e1426829,random,,,shylee/so100_pengripG,274,good,,task: pick up a rubber pen/pencil grip and put in a coffee mug. seems they used 3 cameras.
+ffce7bc5705c,random,,,shylee/so100_testpi0data,4,good,,
+fb53fe228a53,random,,,tomozooooon/so101_visual_prompt_middle_100ep,35,good,different task,
+cb69e1e9efe3,random,,,vraiRobotLab/ROS2-so101-pick-and-place,19,good,,
+b54fb9a4184a,repeat,,2b25db90e2b4,Cornito/so101_test3,11,good,,
+bdf1c91f2ace,repeat,,f06f4c589eb6,Mwuqiu/So100_Four_Tasks,6,good,,
+6cb5c39613c2,repeat,,52dccd1a7909,aaronsu11/so100_instrument,33,unsure,,
+ec6f7ff84b58,repeat,idle_fraction,6589602476b2,aswinkumar99/LeRobot-SO101-task2-multiple-sponges-no-distractors-fixed-locations,1,bad,recording problem,
+1baf57d13470,repeat,sharpness_min,44878c8287fb,jccj/shape_matching_u,33,good,different task,
+9a4e9a218554,repeat,,ec83bf2128b1,rlodhi/screw_placing_deprecated,25,unsure,different task,
+09c723bb1d74,repeat,,97505db4cb95,ryanpennings/so100_pegcrate_c3,14,good,different task,
+dfc72685d24c,repeat,,b7e4478cd64b,shylee/so100_2camRubber,34,good,,
