@@ -64,8 +64,13 @@ def rename_in_place(root: Path, cams: dict[str, str], ours_info: dict) -> None:
         if stats_path.exists():
             stats = json.loads(stats_path.read_text())
             stats_path.write_text(json.dumps({step.get(k, k): v for k, v in stats.items()}, indent=4))
-    for k in ("action", "observation.state"):
-        info["features"][k]["names"] = ours_info["features"][k]["names"]
+    # Non-video features: our exact definitions. Converted v2.1 datasets, for example, carry an extra
+    # per-feature "fps" that LeRobot's merge treats as a difference. The data itself is unchanged.
+    for k, v in ours_info["features"].items():
+        if v.get("dtype") != "video" and k in info["features"]:
+            if info["features"][k].get("dtype") != v.get("dtype") or list(info["features"][k].get("shape", [])) != list(v.get("shape", [])):
+                raise ValueError(f"feature {k} differs from ours in dtype or shape: {info['features'][k]}")
+            info["features"][k] = json.loads(json.dumps(v))
     info["robot_type"] = ours_info["robot_type"]
     info_path.write_text(json.dumps(info, indent=4))
 
@@ -133,10 +138,16 @@ def _prepare(src: dict, set_name: str, video_cfg: dict) -> dict:
     drop = sorted(set(range(total)) - set(src["episodes"]))
     if drop:
         ds = delete_episodes(ds, drop, output_dir=work / "sel", repo_id=src["repo_id"])
-    # 4. Drop the other cameras.
-    if src["drop"]:
-        ds = remove_feature(ds, [f"observation.images.{c}" for c in src["drop"]], output_dir=work / "cams",
-                            repo_id=src["repo_id"])
+    # 4. Drop the other cameras, and any feature ours does not have (the merge needs the same feature list).
+    ours_features = json.loads((OURS / "meta/info.json").read_text())["features"]
+    keep_cams = {f"observation.images.{src['wrist']}", f"observation.images.{src['front']}"}
+    extra = sorted(k for k in ds.meta.features
+                   if k not in ours_features and k not in keep_cams)
+    missing = sorted(k for k in ours_features if not k.startswith("observation.images.") and k not in ds.meta.features)
+    if missing:
+        raise ValueError(f"source lacks features that ours has: {missing}")
+    if extra:
+        ds = remove_feature(ds, extra, output_dir=work / "cams", repo_id=src["repo_id"])
     root = Path(ds.root)
     # 5. Rename to our camera keys, joint names and robot type.
     ours_info = json.loads((OURS / "meta/info.json").read_text())
@@ -152,7 +163,7 @@ def _prepare(src: dict, set_name: str, video_cfg: dict) -> dict:
     if critical:
         raise ValueError(f"the video files still differ from ours after re-encoding: {critical}")
     ds = LeRobotDataset(src["repo_id"], root=root)
-    return {"root": str(root), "source_episodes": total, "kept_episodes": ds.meta.total_episodes,
+    return {"root": str(root), "dropped_features": extra, "source_episodes": total, "kept_episodes": ds.meta.total_episodes,
             "frames": ds.meta.total_frames, "converted": str(src["codebase_version"]).startswith("v2"),
             "encoder_fields_differing_before_alignment": differs}
 
