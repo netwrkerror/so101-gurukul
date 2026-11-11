@@ -173,7 +173,9 @@ def validate(merged_root: Path, set_repo: str, ours_info: dict, sources: list[di
     from lerobot.datasets.feature_utils import features_equal_for_merge
 
     ds = LeRobotDataset(set_repo, root=merged_root)
-    checks = {"features_equal_ours": features_equal_for_merge(ours_info["features"], ds.meta.features),
+    # Compare loaded metadata on both sides (as LeRobot's merge does): shapes load as tuples, not JSON lists.
+    ours_features = LeRobotDataset(ours_info["repo_id"], root=OURS).meta.features
+    checks = {"features_equal_ours": features_equal_for_merge(ours_features, ds.meta.features),
               "robot_type": ds.meta.robot_type, "fps": ds.meta.fps,
               "episodes": ds.meta.total_episodes, "frames": ds.meta.total_frames}
     # Decode the first frame of every episode: ours and every public source (inside the container).
@@ -188,7 +190,20 @@ def validate(merged_root: Path, set_repo: str, ours_info: dict, sources: list[di
         except Exception as e:
             failures.append({"episode": ep, "error": f"{type(e).__name__}: {str(e)[:160]}"})
     checks["decode_failures"] = failures
-    checks["ok"] = checks["features_equal_ours"] and not failures and checks["robot_type"] == ours_info["robot_type"]
+    # Open every video file and record what it actually is, rather than trusting the metadata.
+    import av
+
+    probed = {}
+    for f in sorted((merged_root / "videos").rglob("*.mp4")):
+        with av.open(str(f)) as c:
+            v = c.streams.video[0]
+            key = (v.codec_context.name, v.codec_context.width, v.codec_context.height, v.codec_context.pix_fmt)
+            probed[str(key)] = probed.get(str(key), 0) + 1
+    checks["video_files_by_codec_size_pixfmt"] = probed
+    checks["video_files_match_ours"] = all(k.startswith("('libdav1d'") or k.startswith("('av1'") or "av1" in k
+                                           for k in probed) and all("640, 480, 'yuv420p'" in k for k in probed)
+    checks["ok"] = (checks["features_equal_ours"] and not failures and checks["video_files_match_ours"]
+                    and checks["robot_type"] == ours_info["robot_type"])
     return checks
 
 
@@ -235,7 +250,7 @@ def main() -> None:
         merged = merge_datasets(parts, output_repo_id=set_repo, output_dir=merged_root)
         recompute_stats(merged)
         report["merge_seconds"] = round(time.time() - t1, 1)
-        report["validation"] = validate(merged_root, set_repo, ours_info, sources)
+        report["validation"] = validate(merged_root, set_repo, ours_info | {"repo_id": plan["ours"]["repo_id"]}, sources)
         report["status"] = "ok" if report["validation"]["ok"] else "built, but validation failed"
     name = args.set if args.limit is None else f"{args.set}_smoke"
     (OUT / f"{name}_build.json").write_text(json.dumps(report, indent=1))
@@ -246,6 +261,7 @@ def main() -> None:
         v = report["validation"]
         print(f"   validation: features equal ours {v['features_equal_ours']}, {v['episodes']} episodes, {v['frames']} frames, "
               f"decode failures {len(v['decode_failures'])}")
+        print(f"   video files (codec, width, height, pixel format): {v['video_files_by_codec_size_pixfmt']}")
 
 
 if __name__ == "__main__":
