@@ -1,0 +1,38 @@
+# Step 5a: build S2 (curated) and S3 (random control). src/curate_plan.py (Mac, decodes nothing)
+# chooses the episodes; src/build_sets.py (container) builds and merges them.
+# Decisions: DECISIONS.md, 2026-11-09 (step 4 results) and the step 5a entry.
+
+seed: 1000
+n_public: 135                 # public episodes in S2 and in S3 (ours: 45 in both)
+max_per_dataset_s2: 10        # S2 takes at most this many episodes from one dataset
+
+ours:
+  repo_id: causalerror/so101-toy-to-bowl
+  root: ~/.cache/huggingface/lerobot/causalerror/so101-toy-to-bowl_20261017_130943
+  robot_type: so_follower
+
+shortlist: projects/03-ray-curation/results/shortlist.csv
+catalog: projects/03-ray-curation/results/catalog_compatible.csv
+dataset_scores: projects/03-ray-curation/results/scores_by_dataset.csv
+episode_scores: outputs/p03_episode_scores.parquet       # 3a (also on the Hub: causalerror/p03-episode-scores)
+video_scores: outputs/p03_video_scores_full.parquet      # 3b (also on the Hub: causalerror/p03-video-scores)
+exclude: [ryanpennings/so100_pegcrate_e1, DorayakiLin/so100_test_Lucas3]   # DECISIONS.md, 2026-10-27
+
+# Joint units: ours are degrees (body joints reach beyond +-100). A dataset whose body joints all stay
+# within +-100 may be on the older "-100 to 100" scale; it is excluded rather than guessed.
+units_min_body_abs: 100
+
+# S2 filters supported by the step 4 review (worst 5% of the pool excluded), then task match.
+s2_filters:
+  idle_fraction_quantile: 0.95
+  length_deviation_quantile: 0.95       # |log(length / median length of the pool)|
+  gripper_open_events: 2                # a single pick and place
+
+build:
+  plan: outputs/p03_sets/plan.json      # written by curate_plan.py, read in the container
+  sets:
+    s2: causalerror/p03-s2-curated
+    s3: causalerror/p03-s3-random
+  # Every public episode is re-encoded to our own video settings (ours: AV1, yuv420p, crf 30,
+  # GOP 2, preset 12), so the merge can concatenate files and no original public bitstream remains.
+  video: {codec: av1, pix_fmt: yuv420p, crf: 30, g: 2, preset: 12}
