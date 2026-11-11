@@ -81,9 +81,15 @@ def main() -> None:
     pool = pool.sort_values(["repo_id", "episode_index"]).drop_duplicates("fingerprint", keep="first")
     funnel.append(("After dropping exact copies (one per fingerprint)", pool.repo_id.nunique(), len(pool)))
 
+    # One seeded order over the whole pool, drawn before build exclusions are applied, so excluding a
+    # dataset later only replaces its episodes instead of redrawing all of S3.
     rng = np.random.default_rng(cfg["seed"])
     n = cfg["n_public"]
-    s3 = pool.iloc[rng.choice(len(pool), size=n, replace=False)].assign(reason="random draw (seed)")
+    order = pool.iloc[rng.permutation(len(pool))]
+    bad = set(cfg.get("exclude_build", {}))
+    s3 = order[~order.repo_id.isin(bad)].head(n).assign(reason="random draw (seeded order)")
+    pool = pool[~pool.repo_id.isin(bad)]
+    funnel.append(("After excluding datasets LeRobot could not build (exclude_build)", pool.repo_id.nunique(), len(pool)))
 
     f = cfg["s2_filters"]
     median_len = pool.length_s.median()

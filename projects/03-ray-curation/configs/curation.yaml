@@ -17,6 +17,12 @@ dataset_scores: projects/03-ray-curation/results/scores_by_dataset.csv
 episode_scores: outputs/p03_episode_scores.parquet       # 3a (also on the Hub: causalerror/p03-episode-scores)
 video_scores: outputs/p03_video_scores_full.parquet      # 3b (also on the Hub: causalerror/p03-video-scores)
 exclude: [ryanpennings/so100_pegcrate_e1, DorayakiLin/so100_test_Lucas3]   # DECISIONS.md, 2026-10-27
+# Found while building the sets (DECISIONS.md, step 5a): LeRobot 0.6.0's own v2.1 converter fails on them.
+# Applied after S3's seeded order is drawn, so only their episodes are replaced.
+exclude_build:
+  tomozooooon/so101_visual_prompt_middle_100ep: the converter's video join fails (Invalid argument from the muxer)
+  tomozooooon/so101_visual_prompt_right_100ep: the converter's video join fails (Invalid argument from the muxer)
+  Kunalmod/so101_test_2: cameras disagree on the episode count (48 and 41)
 
 # Joint units: ours are degrees (body joints reach beyond +-100). A dataset whose body joints all stay
 # within +-100 may be on the older "-100 to 100" scale; it is excluded rather than guessed.

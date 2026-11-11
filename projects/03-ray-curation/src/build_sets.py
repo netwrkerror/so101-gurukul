@@ -44,6 +44,63 @@ def local_name(repo_id: str) -> str:
     return repo_id.replace("/", "__")
 
 
+def drop_stale_columns(root: Path) -> list[str]:
+    """Remove episode-metadata columns of cameras that are no longer features.
+
+    LeRobot 0.6.0's remove_feature drops a camera from info.json but leaves its columns in
+    meta/episodes; renaming another camera to that name would then create duplicate columns.
+    """
+    import pandas as pd
+
+    feats = json.loads((root / "meta/info.json").read_text())["features"]
+    dropped = set()
+    for f in sorted((root / "meta/episodes").rglob("*.parquet")):
+        df = pd.read_parquet(f)
+        stale = [c for c in df.columns if c.startswith(("videos/observation.images.", "stats/observation.images."))
+                 and c.split("/")[1] not in feats]
+        if stale:
+            dropped.update(c.split("/")[1] for c in stale)
+            df.drop(columns=stale).to_parquet(f, index=False)
+    return sorted(dropped)
+
+
+def renumber_files(root: Path) -> None:
+    """Renumber data and video files to chunk-000/file-000, file-001, ... in episode order.
+
+    LeRobot 0.6.0's delete_episodes keeps a whole file's original number when it copies it, and
+    reencode_dataset later reads chunk-000/file-000 to refresh the video info, so a dataset whose
+    kept episodes start at, say, file-002 fails. Paths come from info.json's templates.
+    """
+    import pandas as pd
+
+    info = json.loads((root / "meta/info.json").read_text())
+    ep_files = sorted((root / "meta/episodes").rglob("*.parquet"))
+    eps = pd.concat([pd.read_parquet(f).assign(_src=str(f)) for f in ep_files]).sort_values("episode_index")
+    groups = [("data", None)] + [(f"videos/{k}", k) for k, v in info["features"].items() if v.get("dtype") == "video"]
+    for prefix, key in groups:
+        cc, fc = f"{prefix}/chunk_index", f"{prefix}/file_index"
+        old = list(dict.fromkeys(zip(eps[cc].astype(int), eps[fc].astype(int))))  # first-seen order
+        new = {o: (0, i) for i, o in enumerate(old)}
+        if all(o == n for o, n in new.items()):
+            continue
+        tmpl = info["data_path"] if key is None else info["video_path"]
+
+        def path(chunk, file):
+            kw = {"chunk_index": chunk, "file_index": file}
+            return root / (tmpl.format(**kw) if key is None else tmpl.format(video_key=key, **kw))
+        for o in old:  # two steps through temporary names, so no file overwrites another
+            path(*o).rename(path(*o).with_suffix(path(*o).suffix + ".renumber"))
+        for o in old:
+            dst = path(*new[o])
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            path(*o).with_suffix(path(*o).suffix + ".renumber").rename(dst)
+        mapped = [new[(int(c), int(f))] for c, f in zip(eps[cc], eps[fc])]
+        eps[cc], eps[fc] = [m[0] for m in mapped], [m[1] for m in mapped]
+    for f in ep_files:
+        part = eps[eps._src == str(f)].drop(columns="_src")
+        part.to_parquet(f, index=False)
+
+
 def rename_in_place(root: Path, cams: dict[str, str], ours_info: dict) -> None:
     """Rename camera keys (old -> new), set joint names and robot_type to ours. v3.0 metadata only."""
     import pandas as pd
@@ -174,7 +231,9 @@ def _prepare(src: dict, set_name: str, video_cfg: dict) -> dict:
     if extra:
         ds = remove_feature(ds, extra, output_dir=work / "cams", repo_id=src["repo_id"])
     root = Path(ds.root)
-    # 5. Rename to our camera keys, joint names and robot type.
+    # 5. Tidy LeRobot's leftovers, then rename to our camera keys, joint names and robot type.
+    stale = drop_stale_columns(root)
+    renumber_files(root)
     ours_info = json.loads((OURS / "meta/info.json").read_text())
     rename_in_place(root, {src["wrist"]: "wrist", src["front"]: "front"}, ours_info)
     # 6. Re-encode to our settings, then align the video metadata with ours.
@@ -188,7 +247,7 @@ def _prepare(src: dict, set_name: str, video_cfg: dict) -> dict:
     if critical:
         raise ValueError(f"the video files still differ from ours after re-encoding: {critical}")
     ds = LeRobotDataset(src["repo_id"], root=root)
-    return {"root": str(root), "dropped_features": extra, "source_episodes": total, "kept_episodes": ds.meta.total_episodes,
+    return {"root": str(root), "dropped_features": extra, "stale_columns_removed": stale, "source_episodes": total, "kept_episodes": ds.meta.total_episodes,
             "frames": ds.meta.total_frames, "converted": str(src["codebase_version"]).startswith("v2"),
             "encoder_fields_differing_before_alignment": differs}
 
