@@ -28,6 +28,9 @@ from pathlib import Path
 os.environ["RAY_USAGE_STATS_ENABLED"] = "0"
 os.environ["RAY_ENABLE_UV_RUN_RUNTIME_ENV"] = "0"
 os.environ.setdefault("HF_HUB_OFFLINE", "1")  # no network in the container; never try the Hub
+# Temporary video files go to the output disk, not the container's small in-memory /tmp (shared by
+# the parallel workers; large sources filled it and failed with "Invalid argument").
+os.environ["TMPDIR"] = "/data/out/tmp"
 
 OUT = Path("/data/out")
 PUBLIC_DATA = Path("/data/public")   # step 3a downloads: meta/info.json and data/
@@ -100,11 +103,30 @@ def align_video_info(root: Path, ours_info: dict) -> list[str]:
 def prepare_source(src: dict, set_name: str, video_cfg: dict) -> dict:
     """Steps 1 to 6 for one public source. Never raises: problems become an error field."""
     t0 = time.time()
+    import tempfile
+    import traceback
+
+    Path(os.environ["TMPDIR"]).mkdir(parents=True, exist_ok=True)
+    tempfile.tempdir = os.environ["TMPDIR"]
     out = {"repo_id": src["repo_id"], "episodes": len(src["episodes"])}
+    done = OUT / "work" / set_name / local_name(src["repo_id"]) / "done.json"
+    if done.exists():  # prepared by an earlier run with the same plan entry: reuse it
+        cached = json.loads(done.read_text())
+        if cached.get("plan_entry") == src:
+            return cached["result"] | {"reused": True}
+    # Runs before done.json existed: reuse a success recorded in the previous build report.
+    report = OUT / f"{set_name}_build.json"
+    if not done.exists() and report.exists():
+        prev = {r["repo_id"]: r for r in json.loads(report.read_text()).get("sources", [])}.get(src["repo_id"])
+        if prev and not prev.get("error") and prev.get("root") and Path(prev["root"]).exists():
+            done.write_text(json.dumps({"plan_entry": src, "result": prev}))
+            return prev | {"reused": True}
     try:
         out.update(_prepare(src, set_name, video_cfg))
+        done.write_text(json.dumps({"plan_entry": src, "result": out}))
     except Exception as e:
         out["error"] = f"{type(e).__name__}: {str(e).splitlines()[0][:200] if str(e) else ''}"
+        out["traceback"] = traceback.format_exc().splitlines()[-14:]
     out["seconds"] = round(time.time() - t0, 1)
     return out
 
@@ -141,8 +163,11 @@ def _prepare(src: dict, set_name: str, video_cfg: dict) -> dict:
     # 4. Drop the other cameras, and any feature ours does not have (the merge needs the same feature list).
     ours_features = json.loads((OURS / "meta/info.json").read_text())["features"]
     keep_cams = {f"observation.images.{src['wrist']}", f"observation.images.{src['front']}"}
+    # Every camera except the two mapped ones (even one already named like ours), and any other
+    # feature ours does not have.
     extra = sorted(k for k in ds.meta.features
-                   if k not in ours_features and k not in keep_cams)
+                   if (k.startswith("observation.images.") and k not in keep_cams)
+                   or (not k.startswith("observation.images.") and k not in ours_features))
     missing = sorted(k for k in ours_features if not k.startswith("observation.images.") and k not in ds.meta.features)
     if missing:
         raise ValueError(f"source lacks features that ours has: {missing}")
