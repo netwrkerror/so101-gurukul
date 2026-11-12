@@ -23,6 +23,11 @@
 #   -v "$PWD/outputs/p03_review:/data/out" ... gurukul-video-scoring:dev clips
 # Clips are re-encoded from decoded pixels by this container's FFmpeg, so only they are watched on the Mac.
 #
+# Step 5a sets (S2, S3): plan with src/curate_plan.py on the Mac, then build in here with the step 3a
+# joint data also mounted read-only, and outputs/p03_sets as the writable mount:
+#   -v "$PWD/outputs/p03_public:/data/public:ro" -v "$PWD/outputs/p03_sets:/data/out" \
+#   --entrypoint python gurukul-video-scoring:dev projects/03-ray-curation/src/build_sets.py s2
+#
 # The container has no Ray dashboard (no network). Watch progress in the output, and CPU and
 # memory with `docker stats p03-video-scoring`. Ray's own session logs stay in the in-memory /tmp.
 
@@ -60,6 +65,7 @@ COPY --from=build /app/.venv /app/.venv
 COPY projects/03-ray-curation/src/score_video.py projects/03-ray-curation/src/score_video.py
 COPY projects/03-ray-curation/configs/scoring_stage2.yaml projects/03-ray-curation/configs/scoring_stage2.yaml
 COPY projects/03-ray-curation/configs/review.yaml projects/03-ray-curation/configs/review.yaml
+COPY projects/03-ray-curation/src/build_sets.py projects/03-ray-curation/src/build_sets.py
 
 USER gurukul
 # torchcodec's CUDA 12.8 build loads NVIDIA's NPP, installed by uv under site-packages/nvidia/npp

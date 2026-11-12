@@ -8,4 +8,5 @@
 !projects/03-ray-curation/src/score_video.py
 !projects/03-ray-curation/configs/scoring_stage2.yaml
 !projects/03-ray-curation/configs/review.yaml
+!projects/03-ray-curation/src/build_sets.py
 **/__pycache__

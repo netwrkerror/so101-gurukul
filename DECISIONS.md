@@ -413,3 +413,44 @@ The labels are good, bad, or unsure, with reason tags.
 **Why:** with only 2 bad episodes among the random ones, no score's agreement could be measured; this is a negative result, not a failure of the review. The useful evidence is the extremes and the notes. The public pool, after the earlier filters, is mostly clean (about 6% bad, roughly 2% to 19%), so the remaining curation question is relevance, not quality.
 
 **Noted:** the clip maker hit Ray's memory limit with 6 workers (retried, all 60 clips completed); one clip was cut short by a camera segment shorter than its metadata.
+
+## 2026-11-09: Project 03 step 5a: how S2 and S3 are chosen and built
+
+**Decision:**
+
+- **Size:** 135 public episodes in S2 and in S3, plus our 45 in both (ours about a quarter of each set). Training keeps run 4's settings.
+- **Pool:** the 73 usable shortlisted datasets, minus 12 whose joint units may not be ours (every body joint within +-100, which could be the older -100 to 100 scale; excluded rather than guessed), minus exact copies.
+- **S3:** a seeded random draw (seed 1000) from the pool. Only the requirements for merging apply, so S2 against S3 isolates the curation.
+- **S2:** the same pool, then:
+  - the filters the step 4 review supported (the worst 5% by idle fraction and by length);
+  - exactly 2 gripper openings, for task match;
+  - ranked by similarity to our scene (front camera), with at most 10 episodes per dataset.
+- **Cameras:** each source's wrist camera becomes `wrist`, and its fixed camera most like our front view becomes `front`. Other cameras are dropped. Joint names and `robot_type` are rewritten to ours.
+- **Video:** every public episode is re-encoded to our settings (AV1, yuv420p, crf 30, GOP 2, preset 12) inside the isolated container, and the build stops if a file's codec, pixel format, size, or fps still differs from ours.
+- **The test set (5b)** is recorded in the training recordings' lighting (daylight, blinds open), so the offline metric is not confounded by lighting.
+
+**Why:**
+
+- **The merge's requirements.** LeRobot 0.6.0's merge requires identical features: camera keys, joint names, `robot_type`, and video codec and size. It also concatenates video with FFmpeg's stream copy, which needs one codec; the shortlist mixes H.264 and AV1. There is no rename operation, so camera keys, joint names, and `robot_type` are rewritten in the metadata by `build_sets.py`.
+- **Re-encoding also helps elsewhere:** the training data's video becomes files written by our own FFmpeg, and it removes codec differences between our footage and public footage. Exception: a public file already in our exact settings and copied whole keeps its original bitstream.
+- **Joint units:** merging data in different units would teach wrong positions. Calibration still differs from arm to arm; that risk is not corrected.
+
+**Plan as run first:**
+
+- **Pool:** 61 datasets and 4,213 episodes after the unit check.
+- **S2 filters:** 2,419 episodes in 55 datasets pass.
+- **S2:** 135 episodes from 17 datasets; **S3:** 135 from 44; 3 episodes are in both.
+- **Median distance to our scene:** S2 0.223, S3 0.268.
+
+**Found while building the sets (2026-11-11):**
+
+- **Three datasets excluded,** because LeRobot 0.6.0's own v2.1 converter fails on them:
+  - `tomozooooon/so101_visual_prompt_middle_100ep` and `…_right_100ep`: joining their video files fails in the muxer;
+  - `Kunalmod/so101_test_2`: its cameras disagree on the episode count, 48 and 41.
+
+  They are listed in `configs/curation.yaml` (`exclude_build`).
+- **S3's draw is now a seeded order over the whole pool,** taken before build exclusions, so a later exclusion only replaces the affected episodes. This changed S3 once, from the first plan. S2 is unaffected apart from replacing excluded datasets with the next-ranked episodes.
+- **Two LeRobot 0.6.0 quirks, worked around in `build_sets.py`:**
+  - `remove_feature` leaves a removed camera's columns in `meta/episodes`, so renaming another camera to that name creates duplicate columns. Stale columns are now removed first.
+  - `delete_episodes` keeps a whole file's original number when it copies it, and `reencode_dataset` then reads `chunk-000/file-000` to refresh the video info. Files are now renumbered from `file-000`, with the episode metadata updated to match.
+- **Fixed in `build_sets.py`:** cameras already named like ours, but not chosen, were not dropped. Temporary video files now go to the output disk instead of the in-memory `/tmp`.
