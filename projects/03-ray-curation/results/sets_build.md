@@ -4,7 +4,7 @@ Episode selection: `curation_plan.md`, `s2_episodes.csv`, `s3_episodes.csv`. Bui
 
 | | S2 (curated) | S3 (random control) |
 |---|---|---|
-| Hub dataset (private) | `causalerror/p03-s2-curated`, revision TO FILL | `causalerror/p03-s3-random`, revision TO FILL |
+| Hub dataset (private, tag `v3.0`) | `causalerror/p03-s2-curated`, revision `1ea262622514800d87a4fbc050c77c7c32274811` | `causalerror/p03-s3-random`, revision `7a5d50ab6a1faf7cb89958e1fda67fa0f0291336` |
 | Public source datasets | 16 | 46 |
 | Episodes | 180: our 45 plus 135 public | 180: our 45 plus 135 public |
 | Frames | 82,165 | 94,102 |
