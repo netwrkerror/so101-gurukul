@@ -471,3 +471,9 @@ The final checkpoint of each run is the one evaluated, chosen now, before any ev
 - **Equal compute is deliberate:** S2 and S3 each see their frames about 9 times, against about 31 for S1's smaller set. The brief notes this may favor the smaller set.
 
 **Changed the same day: `a10g-small` instead of `a10g-large`, for both runs.** Both first submissions waited in `SCHEDULING` ("Waiting for requested hardware to become available") for `a10g-large` and were cancelled (jobs `6af66f8b0f431c4f7b56b59b` and `6af670ee5f2f1b7284b91842`). `a10g-small` has the same GPU (1x A10G, 24 GB) with 4 vCPUs instead of 12, at $1.00/hour. Run 4 used about 14% of its 12 vCPUs, and data loading took about 0.002 s per step, so 4 vCPUs should keep up. That is expected, not yet measured: the first log lines confirm or refute it. This is a second difference from run 4 (the CPU count, not the GPU), applied equally to S2 and S3, so S2 against S3 is unaffected. Seconds per step are compared with run 4's 0.16 s; if they are much slower, data loading is the bottleneck, and that is recorded.
+
+## 2026-11-13: Project 03 step 5b: how the held-out test set is recorded
+
+**Decision:** 9 new episodes (3 per spot, interleaved A, B, C), recorded in LeLab with every setting of the training recording: task string, cameras and positions, calibration, fps, the 45-second limit, and daylight with the blinds open. Before recording, the `front` view is compared with the first frame of training episode 0. The set is private, `causalerror/so101-toy-to-bowl-test`, and used only for step 7's offline metric. It is recorded after the S2 and S3 checkpoints were fixed.
+
+**Why:** the offline metric should measure how well each policy predicts new demonstrations of the same setup. So the test set differs from training only in being new: same operator, same scene, same light. Interleaving the spots avoids tying a spot to the start or end of the session (fatigue, drifting light).
