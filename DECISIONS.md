@@ -454,3 +454,20 @@ The labels are good, bad, or unsure, with reason tags.
   - `remove_feature` leaves a removed camera's columns in `meta/episodes`, so renaming another camera to that name creates duplicate columns. Stale columns are now removed first.
   - `delete_episodes` keeps a whole file's original number when it copies it, and `reencode_dataset` then reads `chunk-000/file-000` to refresh the video info. Files are now renumbered from `file-000`, with the episode metadata updated to match.
 - **Fixed in `build_sets.py`:** cameras already named like ours, but not chosen, were not dropped. Temporary video files now go to the output disk instead of the in-memory `/tmp`.
+
+## 2026-11-12: Project 03 step 6: train S2 and S3 exactly as run 4
+
+**Decision:** Train ACT on S2 and on S3 with project 01's run 4 config, changing only the dataset (pinned to its Hub revision), the job and output names, and the model repo (new, private):
+
+- 100,000 steps, batch 8, 8 workers, seed 1000;
+- `a10g-large`, image digest `sha256:fc48db80c040…`, timeout 8 hours.
+
+The final checkpoint of each run is the one evaluated, chosen now, before any evaluation. Both runs are started by the maintainer; they are paid jobs (about $6.75 each, estimated from run 4).
+
+**Why:**
+
+- **Same settings:** keeping everything but the data the same makes S1 (run 4), S2, and S3 comparable.
+- **`a10g-large` kept,** although run 4 suggested `a10g-small` would do: changing hardware would add a second difference from run 4 for a saving of about $4.50.
+- **Equal compute is deliberate:** S2 and S3 each see their frames about 9 times, against about 31 for S1's smaller set. The brief notes this may favor the smaller set.
+
+**Changed the same day: `a10g-small` instead of `a10g-large`, for both runs.** Both first submissions waited in `SCHEDULING` ("Waiting for requested hardware to become available") for `a10g-large` and were cancelled (jobs `6af66f8b0f431c4f7b56b59b` and `6af670ee5f2f1b7284b91842`). `a10g-small` has the same GPU (1x A10G, 24 GB) with 4 vCPUs instead of 12, at $1.00/hour. Run 4 used about 14% of its 12 vCPUs, and data loading took about 0.002 s per step, so 4 vCPUs should keep up. That is expected, not yet measured: the first log lines confirm or refute it. This is a second difference from run 4 (the CPU count, not the GPU), applied equally to S2 and S3, so S2 against S3 is unaffected. Seconds per step are compared with run 4's 0.16 s; if they are much slower, data loading is the bottleneck, and that is recorded.
