@@ -25,7 +25,7 @@
     "enable": false
   },
   "job": {
-    "target": "a10g-large",
+    "target": "a10g-small",
     "image": "huggingface/lerobot-gpu@sha256:fc48db80c040cfbc33e0a481e351b042a77422c527e5150138c354e4774e471f",
     "timeout": "8h"
   }
