@@ -9,15 +9,16 @@ recorded_with:
   lelab_commit: 9b5afaee33baa1d773e499937564f3831d25de22
   lerobot_version: 0.6.0
   lerobot_commit: 30da8e687a6dfc617fcd94afc367ac7071c376ce
-  date: TO FILL
+  date: 2026-11-13
 
 dataset:
-  repo_id: causalerror/so101-toy-to-bowl-test     # private; renamed on the Hub if LeLab appends a timestamp
-  original_repo_id: TO FILL                       # LeLab's name, if different
+  repo_id: causalerror/so101-toy-to-bowl-test   # private
+  original_repo_id: LeLab's timestamped name, renamed on the Hub (the revision is unchanged)
   private: true
-  revision: TO FILL                               # Hub commit after upload
+  revision: 0683b67ac70673f7ea9f07bcaa17dae6d5b6a410   # Hub commit of the upload
   single_task: "Pick up the stuffed toy and place it in the bowl"   # identical to training
   num_episodes: 9
+  total_frames: 4302
   fps: 30
   episode_time_s: 45     # maximum; end early once the toy is in the bowl, as in training
   reset_time_s: 30
@@ -36,7 +37,8 @@ cameras:                 # same names, sizes, and positions as training
 
 conditions:
   lighting: daylight, blinds open (as the training recording; DECISIONS.md, 2026-11-09)
-  front_camera_check: TO FILL   # compared with outputs/p03_test/reference_front_ep0.png before recording
+  front_camera_check: close to training episode 0's first frame (same position, angle, and framing); the bowl slightly further into the frame, as also noted at project 01's evaluation
+  camera_indexes: {wrist: 0, front: 1}   # lerobot-find-cameras, 2026-11-13, unchanged
 
 episodes_by_spot:        # interleaved, so no spot is all at the start or the end of the session
   order: [A, B, C, A, B, C, A, B, C]
@@ -44,4 +46,6 @@ episodes_by_spot:        # interleaved, so no spot is all at the start or the en
   B: "1, 4, 7"
   C: "2, 5, 8"
 
-session_notes: []        # re-recorded attempts and why; anything that differed from training
+session_notes:
+  - 3 or 4 attempts were re-recorded (the exact number was not recorded), for displacements such as a pushed toy or bowl.
+  - Daylight, blinds open, as the training recording.
