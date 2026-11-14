@@ -1,0 +1,51 @@
+# Settings for recording the step 5b held-out test set in LeLab.
+# A record of what is used, not a config that any tool reads (as projects/01-baseline-act/configs/record_lelab.yaml).
+# Every setting matches the training recording, so the test set differs from it only in being new
+# demonstrations. Fill the session fields after recording.
+
+recorded_with:
+  tool: LeLab
+  lelab_version: 0.1.0
+  lelab_commit: 9b5afaee33baa1d773e499937564f3831d25de22
+  lerobot_version: 0.6.0
+  lerobot_commit: 30da8e687a6dfc617fcd94afc367ac7071c376ce
+  date: 2026-11-13
+
+dataset:
+  repo_id: causalerror/so101-toy-to-bowl-test   # private
+  original_repo_id: LeLab's timestamped name, renamed on the Hub (the revision is unchanged)
+  private: true
+  revision: 0683b67ac70673f7ea9f07bcaa17dae6d5b6a410   # Hub commit of the upload
+  single_task: "Pick up the stuffed toy and place it in the bowl"   # identical to training
+  num_episodes: 9
+  total_frames: 4302
+  fps: 30
+  episode_time_s: 45     # maximum; end early once the toy is in the bowl, as in training
+  reset_time_s: 30
+  video: true
+
+robot:                   # follower, shishya
+  robot_type: so_follower
+  id: gurukul            # calibration ID, unchanged since training
+
+teleop:                  # leader, guru
+  id: gurukul
+
+cameras:                 # same names, sizes, and positions as training
+  wrist: {type: opencv, width: 640, height: 480, fps: 30}
+  front: {type: opencv, width: 640, height: 480, fps: 30}
+
+conditions:
+  lighting: daylight, blinds open (as the training recording; DECISIONS.md, 2026-11-09)
+  front_camera_check: close to training episode 0's first frame (same position, angle, and framing); the bowl slightly further into the frame, as also noted at project 01's evaluation
+  camera_indexes: {wrist: 0, front: 1}   # lerobot-find-cameras, 2026-11-13, unchanged
+
+episodes_by_spot:        # interleaved, so no spot is all at the start or the end of the session
+  order: [A, B, C, A, B, C, A, B, C]
+  A: "0, 3, 6"
+  B: "1, 4, 7"
+  C: "2, 5, 8"
+
+session_notes:
+  - 3 or 4 attempts were re-recorded (the exact number was not recorded), for displacements such as a pushed toy or bowl.
+  - Daylight, blinds open, as the training recording.
