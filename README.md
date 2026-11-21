@@ -1,6 +1,6 @@
 # so101-gurukul
 
-Hands-on physical AI projects on a Seeed Studio SO-ARM101 Pro (leader and follower arms) using Hugging Face LeRobot. The aim is to work through the full loop on real hardware: data collection, training, evaluation, serving, and observability.
+Hands-on physical AI projects on a Seeed Studio SO-ARM101 Pro (leader and follower arms) using Hugging Face LeRobot. The aim is to work through the full loop on real hardware: data collection, training, evaluation, serving, observability, and data curation.
 
 ## Status
 
@@ -8,7 +8,7 @@ Project 01 is complete. An ACT policy trained on 45 teleoperated demonstrations 
 
 Project 02 is complete. The same policy, run as a separate policy server that the robot client calls over gRPC, succeeded in **9 of 20 trials** under project 01's protocol and lighting, against 10/20 running in-process: a difference within chance. The serving path held the 30 Hz control loop with no deadline misses and a 72 ms mean chunk round trip, observed live with Prometheus and Grafana. See [`projects/02-serving-observability/results/summary.md`](projects/02-serving-observability/results/summary.md).
 
-Project 03 has not started.
+Project 03 is complete. A Ray pipeline scored 77,486 public SO-100/SO-101 episodes from their joint data and a 50 GB video shortlist inside an isolated container, checked the scores against a blind manual review, and built two training sets: our 45 episodes plus 135 curated public episodes (S2), or plus 135 random ones (S3). On the arm, S2 succeeded in **15 of 20 trials** and S3 in **8 of 20**, the same evening, in balanced blocks: suggestive (p = 0.054), not conclusive, and concentrated at one of the three spots. Offline, all three policies predicted held-out demonstrations equally well. See [`projects/03-ray-curation/results/summary.md`](projects/03-ray-curation/results/summary.md).
 
 ## Hardware
 
@@ -19,7 +19,7 @@ Project 03 has not started.
 | Dev machine | macOS |
 | Local compute device | `mps` (Apple GPU) |
 | Cameras | `wrist` (on the follower's gripper) and `front` (fixed, facing the arm), both 640x480 at 30 fps |
-| Cloud training | Hugging Face Jobs, `a10g-large` |
+| Cloud training | Hugging Face Jobs, 1x A10G (`a10g-large` in project 01, `a10g-small` in project 03) |
 
 The setup as a whole is called gurukul.
 
@@ -75,7 +75,7 @@ On macOS, LeRobot commands print an `objc` warning about duplicate `AVFFrameRece
 |---|---|
 | `projects/01-baseline-act` | Complete: 10/20 on the real arm ([summary](projects/01-baseline-act/results/summary.md)) |
 | `projects/02-serving-observability` | Complete: 9/20 through the served setup ([summary](projects/02-serving-observability/results/summary.md)) |
-| `projects/03-ray-curation` | Not started |
+| `projects/03-ray-curation` | Complete: curated public data 15/20, random public data 8/20 ([summary](projects/03-ray-curation/results/summary.md)) |
 
 ## Repo guide
 
