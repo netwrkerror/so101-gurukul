@@ -494,3 +494,8 @@ The final checkpoint of each run is the one evaluated, chosen now, before any ev
 **Known limits:** the operator knows which policy runs, so the evaluation is not blind; the objective success rule and the recordings are the mitigation.
 
 **Changed before the session (same day): S1 is not re-run.** The maintainer judged the conditions unchanged since project 01's evaluation: no recalibration, the same taped spots and bowl outline, the same evening lighting, and a matching camera view. The arm evaluation is therefore 40 trials, in balanced blocks of 10 (S2, S3, S3, S2). S1's result stays project 01's 10/20 from 2026-10-18. S1 against S2 and S3 is across sessions and is reported as not like for like; S2 against S3 remains the like-for-like comparison. The offline metric still covers all three on the same test set.
+
+## 2026-11-20: Two project 03 figures recorded for the write-up
+
+- **Step 3a's download:** the first full run downloaded 1.59 GB of joint data for 761 datasets in 17.6 minutes; the rerun added 0.03 GB for 33 datasets in 0.7 minutes (the committed `scoring_stage1.md` shows only the rerun, which overwrote the first summary). In all, about 1.6 GB in about 18 minutes.
+- **Step 3a's skipped image datasets:** the second plan pass listed the three datasets whose cameras are stored as images at 23.11 GB together, more than the 1.63 GB of joint data for the other 804. The 10.5 GB in the entry above was the first pass's total, before two of the three were counted (they were excluded earlier by the 200 MB file cap).
