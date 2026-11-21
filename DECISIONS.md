@@ -477,3 +477,20 @@ The final checkpoint of each run is the one evaluated, chosen now, before any ev
 **Decision:** 9 new episodes (3 per spot, interleaved A, B, C), recorded in LeLab with every setting of the training recording: task string, cameras and positions, calibration, fps, the 45-second limit, and daylight with the blinds open. Before recording, the `front` view is compared with the first frame of training episode 0. The set is private, `causalerror/so101-toy-to-bowl-test`, and used only for step 7's offline metric. It is recorded after the S2 and S3 checkpoints were fixed.
 
 **Why:** the offline metric should measure how well each policy predicts new demonstrations of the same setup. So the test set differs from training only in being new: same operator, same scene, same light. Interleaving the spots avoids tying a spot to the start or end of the session (fatigue, drifting light).
+
+## 2026-11-13: Project 03 step 7: how the three policies are evaluated
+
+**Decision:**
+
+- **Offline:** S1, S2, and S3 are scored on the 9-episode test set by action prediction error, for the first action and for the first second of the predicted chunk, with bootstrap intervals over episodes (`src/offline_eval.py`).
+- **On the arm:** 20 trials per policy under project 01's protocol, unchanged. **S1 is re-run in the same session** as S2 and S3 (60 trials in all), in balanced blocks of 10 (S1, S2, S3, S3, S2, S1), so each policy has one early and one late block. Every trial is recorded with `lerobot-rollout`, privately.
+
+**Why:**
+
+- **S1 re-run:** its 10/20 is from October. Tape, light, wear, and the toy's placement drift over weeks, so comparing new results with an old session is not like for like. Re-running S1 alongside removes that; October's 10/20 is reported for reference only.
+- **Balanced blocks:** running each policy's 20 trials in one stretch would tie it to one part of the evening (fading light, operator fatigue, motor warmth).
+- **Recording every trial:** part 2's evaluation had none, so its re-runs and failure types rested on notes. With recordings, every call can be checked.
+
+**Known limits:** the operator knows which policy runs, so the evaluation is not blind; the objective success rule and the recordings are the mitigation.
+
+**Changed before the session (same day): S1 is not re-run.** The maintainer judged the conditions unchanged since project 01's evaluation: no recalibration, the same taped spots and bowl outline, the same evening lighting, and a matching camera view. The arm evaluation is therefore 40 trials, in balanced blocks of 10 (S2, S3, S3, S2). S1's result stays project 01's 10/20 from 2026-10-18. S1 against S2 and S3 is across sessions and is reported as not like for like; S2 against S3 remains the like-for-like comparison. The offline metric still covers all three on the same test set.

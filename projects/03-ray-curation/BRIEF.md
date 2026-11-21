@@ -81,6 +81,8 @@ Evaluation protocol: as in project 01. Same spots, bowl, toy, cameras, task stri
 
 ## Out of scope / later
 
+- **Follower disconnects during evaluation:** in step 7 the follower dropped off the bus six times, always at the start of an episode, with `Failed to sync read 'Present_Position' ... There is no status packet!` for all six motors. Before the next arm session: check the power supply and its connector, use a direct USB port (no hub), and consider retrying the sync read (LeRobot tried once). After a mid-episode disconnect, LeRobot 0.6.0 also fails to close the recording (missing camera statistics for the interrupted episode).
+
 - A multi-node Ray cluster (cloud, or Kubernetes with KubeRay). Planned as a follow-on once the local pipeline works.
 - Evaluation at scale in simulation, with Ray running many simulated robots as clients of project 02's policy server.
 - Recording a large new dataset, beyond the held-out test set.
