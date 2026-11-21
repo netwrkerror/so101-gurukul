@@ -6,7 +6,7 @@ The protocol and schedule below were written before any trial was run. Results a
 
 | Policy | Model (private) | Local copy | Config |
 |---|---|---|---|
-| S1: our 45 episodes (project 01's run 4) | `causalerror/act-so101-toy-to-bowl` @ `2ecffdd4` | `outputs/act_final/` | `configs/eval_act_s1.json` |
+| S1: our 45 episodes (project 01's run 4) | `causalerror/act-so101-toy-to-bowl` @ `2ecffdd4` | `outputs/act_final/` | not re-run on the arm (see Schedule); `configs/eval_act_s1.json` kept, unused |
 | S2: ours plus 135 curated public episodes | `causalerror/act-so101-p03-s2-curated` @ `9537e8b4` | `outputs/act_s2/` | `configs/eval_act_s2.json` |
 | S3: ours plus 135 random public episodes | `causalerror/act-so101-p03-s3-random` @ `2ea29fd7` | `outputs/act_s3/` | `configs/eval_act_s3.json` |
 
@@ -27,28 +27,28 @@ The protocol and schedule below were written before any trial was run. Results a
 
 ## Schedule: balanced blocks of 10
 
-Six runs of 10 trials, in this order, so each policy has one block early and one late in the session (light, operator fatigue, and motor warmth all drift over an evening):
+Four runs of 10 trials, in this order, so S2 and S3 each have one block early and one late in the session (light, operator fatigue, and motor warmth all drift over an evening):
 
 | Run | Policy | Block | Trials (spots) |
 |---|---|---|---|
-| 1 | S1 | 1 | 1 to 10 (A, B, C, A, B, C, A, B, C, A) |
-| 2 | S2 | 1 | 1 to 10 |
-| 3 | S3 | 1 | 1 to 10 |
-| 4 | S3 | 2 | 11 to 20 (B, C, A, B, C, A, B, C, A, B) |
-| 5 | S2 | 2 | 11 to 20 |
-| 6 | S1 | 2 | 11 to 20 |
+| 1 | S2 | 1 | 1 to 10 (A, B, C, A, B, C, A, B, C, A) |
+| 2 | S3 | 1 | 1 to 10 |
+| 3 | S3 | 2 | 11 to 20 (B, C, A, B, C, A, B, C, A, B) |
+| 4 | S2 | 2 | 11 to 20 |
+
+**S1 is not re-run on the arm** (the maintainer's decision, made before the session): the setup and conditions are judged unchanged since October (no recalibration, the same taped spots and bowl outline, the same evening lighting, a matching camera view). S1's result is project 01's 10/20 from 2026-10-18.
 
 ## Session conditions (to fill)
 
 | Check | Value |
 |---|---|
-| Date | TO FILL |
-| Git commit | TO FILL |
-| Camera indexes (`lerobot-find-cameras`) | TO FILL |
-| `front` view against the reference still | TO FILL |
-| Lighting | TO FILL (planned: evening, blinds closed) |
-| Bowl on its outline, spots taped | TO FILL |
-| No recalibration since recording | TO FILL |
+| Date | 2026-11-13, evening |
+| Git commit | `7bb5742` (protocol and configs committed before the session) |
+| Camera indexes (`lerobot-find-cameras`) | `wrist` 0, `front` 1, confirmed from the saved stills before the session |
+| `front` view against the reference still | Close: same position, angle, and framing as the first `front` frame of training episode 0; bowl at the right edge, as in project 01's evaluation |
+| Lighting | Evening, blinds closed (from the `front` still), as project 01 and 02's evaluations |
+| Bowl on its outline, spots taped | Yes |
+| No recalibration since recording | None (confirmed by the operator) |
 
 ## Trials (to fill)
 
@@ -58,4 +58,4 @@ For each policy, 20 rows: trial, spot, outcome, failure type, time to success, n
 
 - **Not blind:** the operator knows which policy is running. The success rule is objective, and every trial is recorded, so judgment calls can be checked on video.
 - **With 20 trials per policy,** only a large difference (for example 15/20 against 10/20) would be meaningful. The write-up reports intervals.
-- **S1 is re-run in the same session** so the three policies share conditions. Its October result (10/20) is reported alongside, but is not the comparison.
+- **S1 against S2 and S3 is across sessions:** S1's 10/20 is from 2026-10-18, so that comparison is not like for like, however similar the conditions. S2 against S3 (same session, balanced blocks) is the like-for-like comparison.
