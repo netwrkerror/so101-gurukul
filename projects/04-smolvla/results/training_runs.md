@@ -9,7 +9,7 @@ Fields marked TO FILL are completed from the job logs and the Hub.
 | Field | Value |
 |---|---|
 | Purpose | Confirm the image runs SmolVLA and loads the pinned base; measure seconds per step, GPU memory, and cost per step on `a100-large` before the full run |
-| Command | `configs/train_smolvla.sh --steps=200 --job_name=p04_smolvla_check` (first submitted with a `--policy.repo_id`, which the launcher ignores; see Notes) |
+| Command | `configs/train_smolvla.sh --steps=200 --job_name=p04_smolvla_check` |
 | Job ID | `6b033948130a00b5aa80d857`, 3 m 14 s (including the 0.9 GB base download) |
 | Settings actually used (from the pushed `train_config.json`) | base `lerobot/smolvla_base` @ `5e8d12a6`, `empty_cameras` 0, our camera mapping, batch 64, private |
 | Parameters | 450,046,176 in total; 99,880,992 trained (the action expert) |
@@ -37,6 +37,6 @@ Fields marked TO FILL are completed from the job logs and the Hub.
 ## Notes
 
 - The final checkpoint (20,000 steps) is the one evaluated, chosen now, before any evaluation.
-- **Model repo names:** with `--policy.path`, LeRobot 0.6.0's HF Jobs launcher names the model repo `<user>/<job_name>_<UTC timestamp>` and ignores `--policy.repo_id` (`lerobot/jobs/hf.py`: the policy is not resolved yet when the name is chosen). `--policy.private` is honored.
+- **Model repo names:** with `--policy.path`, LeRobot 0.6.0's HF Jobs launcher names the model repo `<user>/<job_name>_<UTC timestamp>` and overrides `--policy.repo_id` (`lerobot/jobs/hf.py`: the policy is not resolved yet when the name is chosen). The flag is still required, because validation rejects `save_checkpoint_to_hub` without it; dropping it made the first full-run launch fail before anything was submitted. `--policy.private` is honored.
 - Loss is not comparable with ACT's: different model, objective (SmolVLA uses flow matching), and chunk length.
 - Not equal compute with ACT: different models and LeRobot's recommended settings for each. The write-up says so.

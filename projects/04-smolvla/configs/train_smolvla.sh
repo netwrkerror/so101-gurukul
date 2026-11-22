@@ -11,11 +11,14 @@
 #
 # The model repo is named by LeRobot 0.6.0's HF Jobs launcher, not by --policy.repo_id: with --policy.path,
 # it is <user>/<job_name>_<UTC timestamp> (lerobot/jobs/hf.py). It is created private (--policy.private).
+# --policy.repo_id is still required: validation rejects save_checkpoint_to_hub without it, before the
+# launcher swaps in its own name. Its value is not used.
 set -euo pipefail
 exec uv run lerobot-train \
   --config_path=projects/04-smolvla/configs/train_smolvla.json \
   --policy.path=lerobot/smolvla_base \
   --policy.pretrained_revision=5e8d12a6e2975b0e5e5fce7c8caf47c371d257b6 \
+  --policy.repo_id=causalerror/smolvla-so101-toy-to-bowl \
   --policy.push_to_hub=true \
   --policy.private=true \
   --policy.device=cuda \
