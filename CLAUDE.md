@@ -92,7 +92,7 @@ Fill these in after first setup and keep them current.
 | Leader port | In `common/hardware.local.yaml` (gitignored) |
 | Follower port | In `common/hardware.local.yaml` (gitignored) |
 | Cameras (name, index, resolution, fps) | TBD |
-| LeRobot version | 0.6.0, git commit `30da8e687a6dfc617fcd94afc367ac7071c376ce` (tag v0.6.0), extras `core-scripts`, `feetech`, `training` |
+| LeRobot version | 0.6.0, git commit `30da8e687a6dfc617fcd94afc367ac7071c376ce` (tag v0.6.0), extras `core-scripts`, `feetech`, `training`, `async`, `smolvla` |
 | Python version | 3.12 (`>=3.12,<3.13`) |
 | Dev machine | MacBook Pro, M5 Pro (15-core CPU, 16-core GPU), 24 GB unified memory, macOS |
 | Local compute device | `mps` (Apple GPU). No CUDA on this machine: do not propose CUDA-only flags or libraries for local runs |

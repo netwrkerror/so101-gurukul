@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Physical AI projects on an SO-ARM101 with LeRobot"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "lerobot[core-scripts,feetech,training,async]",
+    "lerobot[core-scripts,feetech,training,async,smolvla]",
     "prometheus-client",
     "ray[default,data]==2.59.0",
     # LeRobot routes torch and torchvision on Linux to PyTorch's CUDA 12.8 index but not torchcodec,
@@ -17,6 +17,9 @@ dependencies = [
 [tool.uv]
 package = false
 required-version = ">=0.12.0"
+# Resolve only releases at least two weeks old at the time of the last dependency change
+# (DECISIONS.md, 2026-11-22). Move this date forward deliberately when changing dependencies.
+exclude-newer = "2026-11-08T00:00:00Z"
 
 [tool.uv.sources]
 torchcodec = [{ index = "pytorch-cu128", marker = "sys_platform == 'linux'" }]

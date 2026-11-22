@@ -31,7 +31,7 @@ Requires [uv](https://docs.astral.sh/uv/) 0.12.0 or newer. On Apple Silicon it m
 uv sync
 ```
 
-This creates `.venv` with Python 3.12 and LeRobot 0.6.0, pinned to git commit `30da8e687a6dfc617fcd94afc367ac7071c376ce`, with the `core-scripts`, `feetech`, and `training` extras.
+This creates `.venv` with Python 3.12 and LeRobot 0.6.0, pinned to git commit `30da8e687a6dfc617fcd94afc367ac7071c376ce`, with the `core-scripts`, `feetech`, `training`, `async`, and `smolvla` extras.
 
 ### FFmpeg 8 for reading datasets
 
