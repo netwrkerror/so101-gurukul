@@ -531,3 +531,14 @@ The final checkpoint of each run is the one evaluated, chosen now, before any ev
 - **A100, not A10G:** batch 64 decodes 8 times more video frames per step than ACT's batch 8, which needs CPUs (12 on `a100-large`, 4 on `a10g-small`); and an A10G (24 GB) may not fit batch 64, where the A100 has 80 GB. At the A10G's lower speed, the cost would be similar or higher.
 - **Not equal compute with ACT** (1.28 million samples against 800,000; different models). Each model gets LeRobot's recommended recipe; the comparison is "each trained as recommended on the same data", and the write-up says so.
 - **Policy settings on the command line:** `lerobot-train` reads `--policy.path` only from the command line, and then replaces any policy fields in the config file, so `configs/train_smolvla.sh` holds them.
+
+## 2026-11-22: Project 04 step 4: the offline comparison, and SmolVLA's noise
+
+**Decision:** Score SmolVLA and ACT S1 with project 03's offline metric, unchanged: the same 9-episode test set and revision, every 5th frame, the error of the first action and of the first second (30 actions), and bootstrap intervals over episodes (seed 1000), with paired differences. SmolVLA's predictions start from random noise (flow matching), so each prediction's noise is drawn from a fixed seed and the frame index, and the whole SmolVLA run is repeated with a second seed (2000). Seed 1000 is the main result; the second run shows how much SmolVLA's own randomness moves the numbers. Fixed before the results were seen.
+
+**Why:**
+
+- **The same metric as project 03,** so S1's numbers must reproduce project 03's exactly (ACT is deterministic). That checks the code and data, and keeps S1, S2, S3, and SmolVLA on one scale.
+- **The first second fits both chunks** (SmolVLA predicts 50 actions, ACT 100), so neither model is scored beyond its own chunk.
+- **Fixed noise** makes the run reproducible; **a second seed** separates a real difference from SmolVLA's sampling noise. A difference from S1 smaller than SmolVLA's difference from itself is not a difference between the models.
+- **Two fixes for local LeRobot 0.6.0** (`src/fetch_model.py`): the cloud image's 0.6.2 adds `dtype` to `config.json` (removed, as for ACT), and names the saved tokenizer by a relative folder, `tokenizer`, which 0.6.0 would look up on the Hub (pointed at the downloaded folder). That saved tokenizer's file is not identical to the base's: 0.6.2 stored padding and truncation (48 tokens) in it and dropped the base's digit-splitting step. It gives the same token ids for our task string (12 tokens, no digits) and has the same vocabulary, so it is used as saved; a task string with digits would need a second look.
