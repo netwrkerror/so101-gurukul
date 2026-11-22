@@ -499,3 +499,13 @@ The final checkpoint of each run is the one evaluated, chosen now, before any ev
 
 - **Step 3a's download:** the first full run downloaded 1.59 GB of joint data for 761 datasets in 17.6 minutes; the rerun added 0.03 GB for 33 datasets in 0.7 minutes (the committed `scoring_stage1.md` shows only the rerun, which overwrote the first summary). In all, about 1.6 GB in about 18 minutes.
 - **Step 3a's skipped image datasets:** the second plan pass listed the three datasets whose cameras are stored as images at 23.11 GB together, more than the 1.63 GB of joint data for the other 804. The 10.5 GB in the entry above was the first pass's total, before two of the three were counted (they were excluded earlier by the 200 MB file cap).
+
+## 2026-11-22: Project 04 environment: SmolVLA, and a release-age limit for dependencies
+
+**Decision:** Add LeRobot's `smolvla` extra, which brings Hugging Face `transformers` 5.5.4, `tokenizers` 0.22.2, `num2words` 0.5.14, and 9 small helper packages (12 in all). The lock changed only by adding these; no existing package changed version (LeRobot, torch, torchvision, torchcodec, Ray included). `pyproject.toml` also gets `[tool.uv] exclude-newer = "2026-11-08T00:00:00Z"`: resolution only considers releases at least two weeks old at the time of this change.
+
+**Why:**
+
+- **SmolVLA:** LeRobot 0.6.0 ships the policy (`lerobot/policies/smolvla/`), but its model code needs the `smolvla` extra.
+- **The date limit:** the first resolution picked `regex` 2026.11.19, released 3 days earlier. The repo's rule (from Ray's pin) is releases at least two weeks old. Passing `--exclude-newer` on the command line alone is recorded in the lock and then makes `uv lock --check` fail, so the limit is declared in `pyproject.toml`, where it is visible and checked. Move the date forward deliberately when dependencies change.
+- **Untested so far:** whether `transformers` 5.5.4 loads `lerobot/smolvla_base` with LeRobot 0.6.0 (step 2 checks).
