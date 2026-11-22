@@ -520,3 +520,14 @@ The final checkpoint of each run is the one evaluated, chosen now, before any ev
 - **Early requests:** they compute the next chunk while the current one plays out, hiding the latency. Project 02 could not test this, because shadow mode keeps the arm still and the server skips unchanged observations; this project tests it on a moving arm, in the dry run.
 - **Same path for ACT:** keeps the comparison like for like. ACT's earlier results (10/20 in-process, 9/20 served without early requests) are reported for reference only.
 - **Recording:** project 02's evaluation had none, and its re-runs and failure types rested on notes. Project 03's recorded trials could be checked against each recording's length.
+
+## 2026-11-22: Project 04 step 3: SmolVLA fine-tuning settings and hardware
+
+**Decision:** Fine-tune `lerobot/smolvla_base` (pinned revision `5e8d12a6`) on our 45 episodes with LeRobot's SmolVLA guide settings: 20,000 steps, batch 64, SmolVLA's default optimizer, action expert only, vision encoder frozen, seed 1000. Cameras: `front` to `camera1`, `wrist` to `camera2`, third slot left out. Hardware: HF Jobs `a100-large` ($2.50/hour), with the same image digest as projects 01 and 03. A 200-step cloud check runs first.
+
+**Why:**
+
+- **The guide's settings:** LeRobot's SmolVLA guide fine-tunes with `--batch_size=64 --steps=20000`, about 4 hours on one A100 (so about $10). It recommends about 50 episodes; we have 45. Its example maps its fixed camera to `camera1` and the wrist camera to `camera2`; ours follows the same mapping.
+- **A100, not A10G:** batch 64 decodes 8 times more video frames per step than ACT's batch 8, which needs CPUs (12 on `a100-large`, 4 on `a10g-small`); and an A10G (24 GB) may not fit batch 64, where the A100 has 80 GB. At the A10G's lower speed, the cost would be similar or higher.
+- **Not equal compute with ACT** (1.28 million samples against 800,000; different models). Each model gets LeRobot's recommended recipe; the comparison is "each trained as recommended on the same data", and the write-up says so.
+- **Policy settings on the command line:** `lerobot-train` reads `--policy.path` only from the command line, and then replaces any policy fields in the config file, so `configs/train_smolvla.sh` holds them.

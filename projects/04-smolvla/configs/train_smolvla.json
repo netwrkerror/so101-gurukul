@@ -1,0 +1,29 @@
+{
+  "job_name": "p04_smolvla",
+  "output_dir": "outputs/train/p04_smolvla",
+  "seed": 1000,
+  "steps": 20000,
+  "batch_size": 64,
+  "num_workers": 10,
+  "log_freq": 200,
+  "save_checkpoint": true,
+  "save_freq": 5000,
+  "save_checkpoint_to_hub": true,
+  "dataset": {
+    "repo_id": "causalerror/so101-toy-to-bowl",
+    "revision": "c6319da870f16f94db98e029ca0f4f654d585970",
+    "video_backend": "torchcodec"
+  },
+  "rename_map": {
+    "observation.images.front": "observation.images.camera1",
+    "observation.images.wrist": "observation.images.camera2"
+  },
+  "wandb": {
+    "enable": false
+  },
+  "job": {
+    "target": "a100-large",
+    "image": "huggingface/lerobot-gpu@sha256:fc48db80c040cfbc33e0a481e351b042a77422c527e5150138c354e4774e471f",
+    "timeout": "8h"
+  }
+}
