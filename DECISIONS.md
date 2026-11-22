@@ -509,3 +509,14 @@ The final checkpoint of each run is the one evaluated, chosen now, before any ev
 - **SmolVLA:** LeRobot 0.6.0 ships the policy (`lerobot/policies/smolvla/`), but its model code needs the `smolvla` extra.
 - **The date limit:** the first resolution picked `regex` 2026.11.19, released 3 days earlier. The repo's rule (from Ray's pin) is releases at least two weeks old. Passing `--exclude-newer` on the command line alone is recorded in the lock and then makes `uv lock --check` fail, so the limit is declared in `pyproject.toml`, where it is visible and checked. Move the date forward deliberately when dependencies change.
 - **Untested so far:** whether `transformers` 5.5.4 loads `lerobot/smolvla_base` with LeRobot 0.6.0 (step 2 checks).
+
+## 2026-11-22: Project 04: serve both policies with early chunk requests
+
+**Decision:** SmolVLA and ACT S1 are both evaluated through project 02's policy server and client on this Mac (`mps`), with early chunk requests (`chunk_size_threshold` 0.5), not in-process. SmolVLA uses our two cameras only (the base's third camera slot left out, `empty_cameras=0`). Project 02's trial runner gains trial recording first, and each policy gets a short dry run on the arm.
+
+**Why:**
+
+- **Measured (`projects/04-smolvla/results/inference_check.md`):** SmolVLA takes 256 ms per 50-action chunk on `mps` (282 ms at worst over 20 runs), against about 88 ms for ACT. In-process, the arm would stop about 13% of the time, so the comparison would partly measure latency, not the models.
+- **Early requests:** they compute the next chunk while the current one plays out, hiding the latency. Project 02 could not test this, because shadow mode keeps the arm still and the server skips unchanged observations; this project tests it on a moving arm, in the dry run.
+- **Same path for ACT:** keeps the comparison like for like. ACT's earlier results (10/20 in-process, 9/20 served without early requests) are reported for reference only.
+- **Recording:** project 02's evaluation had none, and its re-runs and failure types rested on notes. Project 03's recorded trials could be checked against each recording's length.

@@ -10,7 +10,7 @@ ACT (projects 01 to 03) is trained from scratch on one task. VLAs start from a m
 
 ## Steps
 
-Ordered, each one branch and PR. Step 5 moves the arm.
+Ordered, each one branch and PR. Steps 5 and 6 move the arm.
 
 | # | Step | Branch | Done when |
 |---|---|---|---|
@@ -18,8 +18,9 @@ Ordered, each one branch and PR. Step 5 moves the arm.
 | 2 | Inference check on the Mac | `p04/inference-check` | The pretrained base (`lerobot/smolvla_base`) loads with local LeRobot 0.6.0 and predicts a chunk from our cameras and joints; time per chunk on `mps` measured; decision recorded: run in-process (as ACT) or through project 02's policy server |
 | 3 | Fine-tune on our 45 episodes | `p04/train` | A short cloud check (speed, memory, cost per step), then the full run on HF Jobs with LeRobot's SmolVLA fine-tuning settings, checked in the installed source; config committed; the final checkpoint chosen before evaluation; model private on the Hub |
 | 4 | Offline comparison | `p04/offline-eval` | SmolVLA and ACT S1 scored on project 03's 9-episode held-out test set (action error, first action and first second), with bootstrap intervals and paired differences |
-| 5 | Arm evaluation | `p04/eval` | 20 trials each for SmolVLA and ACT S1 under project 01's protocol, in the same session, balanced blocks of 10 (SmolVLA, S1, S1, SmolVLA), every trial recorded |
-| 6 | Write-up | `p04/writeup` | README and a results summary match the logs; part 4 of the blog |
+| 5 | Serving setup and dry run | `p04/serving` | Project 02's trial runner records every trial (video and joints, privately); both policies run through project 02's policy server with early chunk requests; a short dry run on the arm per policy (not counted) shows the queue never empties at chunk boundaries |
+| 6 | Arm evaluation | `p04/eval` | 20 trials each for SmolVLA and ACT S1 under project 01's protocol, both served the same way, in the same session, balanced blocks of 10 (SmolVLA, S1, S1, SmolVLA), every trial recorded |
+| 7 | Write-up | `p04/writeup` | README and a results summary match the logs; part 4 of the blog |
 
 ## Definition of done
 
@@ -27,7 +28,7 @@ Ordered, each one branch and PR. Step 5 moves the arm.
   - **Task:** pick up the stuffed toy from one of three marked spots (7 A, 7 B, 6 C, project 01's fixed order) and place it in the bowl, within 45 seconds.
   - **Success rule, failure types, and re-run rule:** project 01's, unchanged.
   - **The setup:** the same cameras, bowl, toy, task string, and evening lighting, and the same speed cap.
-- **Same session:** SmolVLA and ACT S1 run on the same evening, in balanced blocks, so the comparison is like for like (project 03's S1 was from another session).
+- **Same session and same serving path:** SmolVLA and ACT S1 run on the same evening, in balanced blocks, both through project 02's policy server with early chunk requests, so the comparison is like for like (project 03's S1 was from another session; ACT's earlier results were in-process or served without early requests).
 - **Reported:** successes out of 20 for each, with 95% intervals and an exact test; by spot; the offline comparison; inference time per chunk; training time and cost.
 - **No success target.** With 20 trials, only a large difference is meaningful, and the write-up says so.
 
