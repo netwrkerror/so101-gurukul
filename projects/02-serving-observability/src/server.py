@@ -1,7 +1,9 @@
 """LeRobot's async policy server with Prometheus metrics.
 
-Subclasses ``lerobot.async_inference.policy_server.PolicyServer`` without changing its
-behavior, and starts it the same way LeRobot's ``serve`` does.
+Subclasses ``lerobot.async_inference.policy_server.PolicyServer`` and starts it the same way
+LeRobot's ``serve`` does. One change in behavior (project 04): camera images are passed on at
+the size the cameras send, not resized to the size declared in the policy's config first (see
+``policy_image_features``). For ACT the two sizes are the same, so nothing changes.
 
 Run from the repo root:
     uv run python projects/02-serving-observability/src/server.py \
@@ -20,7 +22,9 @@ import draccus
 import grpc
 from lerobot.async_inference.configs import PolicyServerConfig
 from lerobot.async_inference.policy_server import PolicyServer
+from lerobot.configs import FeatureType, PolicyFeature
 from lerobot.transport import services_pb2_grpc  # type: ignore
+from lerobot.utils.constants import OBS_IMAGES
 
 from metrics import ServerMetrics, save_snapshot, serve_metrics
 
@@ -42,6 +46,22 @@ class InstrumentedPolicyServer(PolicyServer):
         self.metrics = metrics
         self.fault_delay_s = config.fault_delay_s
         self.metrics.fault_delay.set(self.fault_delay_s)
+
+    @property
+    def policy_image_features(self):
+        """The camera sizes, so the server's resize step leaves images as the cameras sent them.
+
+        The stock server resizes each image to the shape in the policy's config before the
+        policy's own preprocessing. SmolVLA's config keeps the pretrained base's 256x256, so our
+        640x480 frames would be squashed to a square; in training they went to SmolVLA's
+        preprocessing at full size, which fits them into 512x512 keeping their proportions.
+        ACT's config declares the cameras' 480x640, so for ACT this is the same as before.
+        """
+        return {
+            key: PolicyFeature(type=FeatureType.VISUAL, shape=(ft["shape"][2], ft["shape"][0], ft["shape"][1]))
+            for key, ft in self.lerobot_features.items()
+            if key.startswith(OBS_IMAGES)
+        }
 
     def SendObservations(self, request_iterator, context):  # noqa: N802
         size = 0
