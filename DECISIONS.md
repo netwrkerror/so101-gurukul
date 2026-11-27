@@ -542,3 +542,31 @@ The final checkpoint of each run is the one evaluated, chosen now, before any ev
 - **The first second fits both chunks** (SmolVLA predicts 50 actions, ACT 100), so neither model is scored beyond its own chunk.
 - **Fixed noise** makes the run reproducible; **a second seed** separates a real difference from SmolVLA's sampling noise. A difference from S1 smaller than SmolVLA's difference from itself is not a difference between the models.
 - **Two fixes for local LeRobot 0.6.0** (`src/fetch_model.py`): the cloud image's 0.6.2 adds `dtype` to `config.json` (removed, as for ACT), and names the saved tokenizer by a relative folder, `tokenizer`, which 0.6.0 would look up on the Hub (pointed at the downloaded folder). That saved tokenizer's file is not identical to the base's: 0.6.2 stored padding and truncation (48 tokens) in it and dropped the base's digit-splitting step. It gives the same token ids for our task string (12 tokens, no digits) and has the same vocabulary, so it is used as saved; a task string with digits would need a second look.
+
+## 2026-11-22: Project 04 step 5: two serving fixes, recording every trial, and the serving settings
+
+**Decision:**
+
+- **The server leaves images at the cameras' size** (`projects/02-serving-observability/src/server.py`, `policy_image_features`). LeRobot 0.6.0's server resizes each image to the size in the policy's config before the policy's own preprocessing. SmolVLA's config keeps the pretrained base's 256x256, so our 640x480 frames would be squashed to a square; in training they reached SmolVLA's preprocessing at full size, which fits them into 512x512 keeping their proportions. ACT's config declares the cameras' 480x640, so nothing changes for ACT.
+- **The runner sends the camera-name mapping** (`rename_map`) to the server. The stock client never sends one, and the server then replaces the model's saved mapping with an empty one. With our camera names, the stock server fails outright (the resize looks up `front` in SmolVLA's config); renaming the cameras on the robot side instead would hit the squash above.
+- **Every trial is recorded,** voided ones included, as one episode of a LeRobot dataset per session (both cameras, joint state, and the action sent to the arm; on a step with no new action, the last one sent, which the arm holds). The trial log records each trial's dataset and episode index. Each dataset is pushed to the Hub, private, when the session ends.
+- **Serving settings, the same for both policies:** early chunk requests at `chunk_size_threshold` 0.5, `latest_only` aggregation (as project 02: a new chunk's actions replace the queued ones for the same steps), the same speed cap, 45-second limit, task string, and schedule. Only the policy, its chunk length (SmolVLA 50, ACT 100), and the camera mapping differ (`projects/04-smolvla/configs/runner_*.json`).
+
+**Why:**
+
+- **The two fixes** make the served SmolVLA see what it trained on and what the offline evaluation measured; `src/serving_check.py` compares the served and offline chunks on test-set frames, with and without the image fix, before the arm is used.
+- **Recording voided trials too** keeps every attempt checkable, as project 03 listed every recording.
+- **A side effect for ACT:** with early requests and `latest_only`, ACT replans when about half of its 100-action chunk remains, about twice as often as in-process. Both policies are served the same way, so the comparison stays like for like; ACT's earlier results (in-process, or served without early requests) are not directly comparable, and the write-up says so.
+
+## 2026-11-26: Project 04 step 6: SmolVLA at two serving settings, 60 trials in one session
+
+**Decision:** The arm evaluation runs three conditions, 20 trials each, in one session, in blocks of 10: SmolVLA at `chunk_size_threshold` 0.5, ACT S1 at 0.5, SmolVLA at 0.25, SmolVLA at 0.25, ACT S1 at 0.5, SmolVLA at 0.5. Within each condition, trials 1 to 10 and 11 to 20 follow project 01's spot order (7 A, 7 B, 6 C over the 20). Everything else is unchanged: `latest_only` aggregation, the speed cap, the 45-second limit, the task string, and project 01's success rule. Before the session: a short practice round for SmolVLA at 0.25 (not counted), and a lighting check against the earlier evaluations' front-camera brightness. Fixed before any counted trial.
+
+**Why:**
+
+- **The step 5 dry run** (`projects/04-smolvla/results/serving_dry_run.md`): near the rest pose, SmolVLA is unsure whether to wait or to go (for one recorded frame, 8 of 16 noise seeds moved and 8 waited), and at 0.5 it re-decides about every 0.6 s, so a new chunk can reverse a move under way. The arm jerked back toward rest mid-move (jumps of up to 71 degrees between consecutive actions; ACT's largest was 19). At 0.25 it re-decides about every 1.3 s, so it commits to more of each chunk, at the cost of occasional brief waits at chunk boundaries (its round trip, 0.3 to 0.6 s, is close to the 0.4 s of actions left when it asks).
+- **0.5 stays the main result,** because it was fixed before any results (2026-11-22) and matches ACT's setting. 0.25 is a declared second condition, not a replacement chosen after the counted results.
+- **One session, interleaved,** so the two SmolVLA settings and ACT share the light, the operator, and the arm's condition, and none is concentrated at the start or end.
+- **ACT is not run at 0.25:** its chunks are deterministic and 100 actions long, so the setting is expected to change it little. That is an expectation, not a measurement, so SmolVLA at 0.25 against ACT at 0.5 is reported as not like for like.
+- **The practice round at 0.25** checks that the queue does not run dry too often at that setting; if it does, this condition is reconsidered before the session.
+- **Lighting:** the practice trials were darker (front brightness 87 to 97) than project 01's and project 03's evaluations (118 to 137); the session needs the evaluation lighting.

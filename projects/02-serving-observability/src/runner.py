@@ -7,7 +7,12 @@ needs and the stock client lacks:
 - the policy paused between trials, while the operator resets the toy;
 - a smooth return to the start pose after every trial, and on any exit;
 - Prometheus metrics for the control loop and the server round trip;
-- a JSON-lines log of every trial.
+- a JSON-lines log of every trial;
+- a recording of every trial (project 04), voided ones included: one episode per trial in a
+  LeRobot dataset (both cameras, the joint state, and the action sent to the arm), pushed to
+  the Hub as a private dataset when the session ends;
+- a camera-name mapping (``rename_map``) passed to the server, which the stock client
+  never sends (project 04: SmolVLA's camera slots are named camera1 to camera3).
 
 Keys, read from the terminal (keep it focused), the same as ``lerobot-rollout``:
     n or Right arrow   start the next trial; during a trial, end it after a success
@@ -34,7 +39,10 @@ import draccus
 from lerobot.async_inference.configs import RobotClientConfig
 from lerobot.async_inference.helpers import TimedObservation
 from lerobot.async_inference.robot_client import RobotClient
+from lerobot.datasets import LeRobotDataset
 from lerobot.transport import services_pb2  # type: ignore
+from lerobot.utils.constants import ACTION, OBS_STR
+from lerobot.utils.feature_utils import build_dataset_frame, combine_feature_dicts, hw_to_dataset_features
 from lerobot.utils.keyboard_input import init_keyboard_listener
 from lerobot.utils.robot_utils import precise_sleep
 
@@ -62,6 +70,13 @@ class RunnerConfig(RobotClientConfig):
     # consumed at 30 Hz), but the actions are discarded instead of sent to the arm, which
     # holds still. Measures serving latency without moving the arm.
     shadow: bool = False
+    # Camera names to policy names, applied by the server's preprocessor, for example
+    # {"observation.images.front": "observation.images.camera1"}. Empty: names unchanged.
+    rename_map: dict[str, str] = field(default_factory=dict)
+    # Record every trial to this new local dataset (it must not exist yet); None: no recording.
+    record_repo_id: str | None = None
+    # Push the recording to the Hub, always private, when the session ends.
+    record_push: bool = True
 
 
 class TrialClient(RobotClient):
@@ -69,9 +84,13 @@ class TrialClient(RobotClient):
 
     def __init__(self, config: RunnerConfig, metrics: ClientMetrics):
         super().__init__(config)
+        # The stock client builds its policy settings without a rename_map; set it before
+        # start() sends them to the server.
+        self.policy_config.rename_map = dict(config.rename_map)
         self.metrics = metrics
         self._chunk_requested_at: float | None = None
         self._warming_up = False
+        self.dataset: LeRobotDataset | None = None
 
     # --- hooks into the stock client, for metrics -------------------------------
 
@@ -157,12 +176,47 @@ class TrialClient(RobotClient):
         with self.latest_action_lock:
             self.latest_action = timed_action.get_timestep()
 
+    def create_recording(self, repo_id: str) -> None:
+        """A new local dataset for this session, recorded as lerobot-rollout records."""
+        features = combine_feature_dicts(
+            hw_to_dataset_features(self.robot.action_features, ACTION, use_video=True),
+            hw_to_dataset_features(self.robot.observation_features, OBS_STR, use_video=True),
+        )
+        self.dataset = LeRobotDataset.create(
+            repo_id,
+            self.config.fps,
+            features=features,
+            robot_type=self.robot.name,
+            use_videos=True,
+            image_writer_threads=4 * len(self.robot.cameras),
+            streaming_encoding=True,
+        )
+
+    def record_frame(self, raw_observation: dict, action: dict) -> None:
+        if self.dataset is None:
+            return
+        features = self.dataset.features
+        self.dataset.add_frame({
+            **build_dataset_frame(features, raw_observation, prefix=OBS_STR),
+            **build_dataset_frame(features, action, prefix=ACTION),
+            "task": self.config.task,
+        })
+
+    def save_trial_recording(self) -> int | None:
+        """Close the trial's episode; returns its index, or None if nothing was recorded."""
+        if self.dataset is None or not self.dataset.has_pending_frames():
+            return None
+        index = self.dataset.num_episodes
+        self.dataset.save_episode()
+        return index
+
     def run_trial(self, duration_s: float, events: dict, dry_run: bool, shadow: bool = False) -> None:
         """The stock control loop, bounded by a time limit and the operator's keys."""
         dt = self.config.environment_dt
         deadline = time.perf_counter() + duration_s
         last_command: dict | None = None
         previous_start: float | None = None
+        held: dict | None = None  # what the arm holds when no action is sent: the start of the trial
 
         while time.perf_counter() < deadline:
             if events["exit_early"] or events["rerecord_episode"] or events["stop_recording"]:
@@ -180,6 +234,9 @@ class TrialClient(RobotClient):
                             abs(commanded - raw_observation[key])
                         )
 
+            if held is None:
+                held = {k: v for k, v in raw_observation.items() if k.endswith(".pos")}
+
             if not dry_run:
                 if self.actions_available():
                     if shadow:
@@ -190,6 +247,10 @@ class TrialClient(RobotClient):
                     self.metrics.empty_queue_steps.inc()
                 if self._ready_to_send_observation():
                     self._send_from(raw_observation)
+
+            # The action recorded is the one sent this step; on a step with none (empty queue,
+            # shadow, dry run), the last one sent, which the arm holds.
+            self.record_frame(raw_observation, last_command if last_command is not None else held)
 
             with self.action_queue_lock:
                 self.metrics.queue_depth.set(self.action_queue.qsize())
@@ -229,6 +290,37 @@ def wait_for_start(events: dict) -> bool:
         time.sleep(0.05)
 
 
+def safe_save(client: TrialClient) -> int | None:
+    """Save a trial cut short by an error, if possible; otherwise drop its frames."""
+    try:
+        return client.save_trial_recording()
+    except Exception as e:
+        print(f"Could not save the interrupted trial's recording: {e!r}")
+        if client.dataset is not None:
+            client.dataset.clear_episode_buffer()
+        return None
+
+
+def close_recording(client: TrialClient, cfg: RunnerConfig) -> None:
+    """Finalize the session's recording, then push it to the Hub (private)."""
+    if client.dataset is None:
+        return
+    if client.dataset.has_pending_frames():  # frames of a trial that was not saved
+        safe_save(client)
+    try:
+        client.dataset.finalize()
+    except Exception as e:
+        print(f"Could not finalize the recording at {client.dataset.root}: {e!r}. Not pushed; kept locally.")
+        return
+    print(f"Recording: {client.dataset.num_episodes} episodes at {client.dataset.root}.")
+    if cfg.record_push and client.dataset.num_episodes > 0:
+        try:
+            client.dataset.push_to_hub(private=True)
+            print(f"Pushed to the Hub (private): {cfg.record_repo_id}")
+        except Exception as e:
+            print(f"Could not push the recording: {e!r}. It is kept locally; push it later.")
+
+
 def log_trial(path: Path, record: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a") as f:
@@ -242,6 +334,13 @@ def main(cfg: RunnerConfig):
     serve_metrics(cfg.metrics_port)
 
     client = TrialClient(cfg, metrics)  # connects the follower and cameras
+    if cfg.record_repo_id:
+        try:
+            client.create_recording(cfg.record_repo_id)  # fails if the dataset already exists locally
+        except Exception:
+            client.robot.disconnect()
+            raise
+        print(f"Recording every trial to {cfg.record_repo_id} ({client.dataset.root}).")
     if not client.start():  # connects to the server and has it load the policy
         client.robot.disconnect()
         raise SystemExit("Could not connect to the policy server. Is it running?")
@@ -278,7 +377,17 @@ def main(cfg: RunnerConfig):
             started_at = datetime.now(timezone.utc).isoformat()
             t0 = time.perf_counter()
             metrics.trial_active.set(1)
-            client.run_trial(cfg.trial_time_s, events, cfg.dry_run, cfg.shadow)
+            try:
+                client.run_trial(cfg.trial_time_s, events, cfg.dry_run, cfg.shadow)
+            except Exception as e:  # for example, the follower stopped answering
+                metrics.trial_active.set(0)
+                log_trial(log_path, {
+                    "session": session, "trial": trial, "spot": spot, "started_at": started_at,
+                    "duration_s": round(time.perf_counter() - t0, 2), "ended_by": f"error: {type(e).__name__}",
+                    "dry_run": cfg.dry_run, "shadow": cfg.shadow, "recording": cfg.record_repo_id,
+                    "episode_index": safe_save(client),
+                })
+                raise
             metrics.trial_active.set(0)
             duration = time.perf_counter() - t0
 
@@ -295,6 +404,9 @@ def main(cfg: RunnerConfig):
 
             print(f"Trial {trial} ended: {ended_by} after {duration:.1f} s. Returning to the start pose...")
             client.return_to(start_pose, cfg.return_time_s)
+            episode_index = client.save_trial_recording()
+            if episode_index is not None:
+                print(f"Saved as episode {episode_index} of {cfg.record_repo_id}.")
 
             metrics.trials.labels(ended_by).inc()
             log_trial(log_path, {
@@ -306,6 +418,8 @@ def main(cfg: RunnerConfig):
                 "ended_by": ended_by,
                 "dry_run": cfg.dry_run,
                 "shadow": cfg.shadow,
+                "recording": cfg.record_repo_id,
+                "episode_index": episode_index,
             })
 
             if ended_by == "quit":
@@ -316,13 +430,20 @@ def main(cfg: RunnerConfig):
         print("\nInterrupted.")
     finally:
         metrics.trial_active.set(0)
+        # Each step is guarded, so one failure (for example, a disconnected follower) does not
+        # skip the others, and the recording is always closed.
         try:
             print("Returning to the start pose before disconnecting...")
             client.return_to(start_pose, cfg.return_time_s)
-        finally:
+        except Exception as e:
+            print(f"Could not return to the start pose: {e!r}")
+        try:
             client.stop()
-            if listener is not None and hasattr(listener, "stop"):
-                listener.stop()
+        except Exception as e:
+            print(f"Could not stop the client cleanly: {e!r}")
+        if listener is not None and hasattr(listener, "stop"):
+            listener.stop()
+        close_recording(client, cfg)
         snapshot = log_path.parent / f"p02_client_metrics_{session}.prom"
         save_snapshot(snapshot)
         print(f"Session ended. Trials logged to {log_path}; metrics snapshot in {snapshot}.")
