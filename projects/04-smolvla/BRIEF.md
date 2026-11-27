@@ -19,7 +19,7 @@ Ordered, each one branch and PR. Steps 5 and 6 move the arm.
 | 3 | Fine-tune on our 45 episodes | `p04/train` | A short cloud check (speed, memory, cost per step), then the full run on HF Jobs with LeRobot's SmolVLA fine-tuning settings, checked in the installed source; config committed; the final checkpoint chosen before evaluation; model private on the Hub |
 | 4 | Offline comparison | `p04/offline-eval` | SmolVLA and ACT S1 scored on project 03's 9-episode held-out test set (action error, first action and first second), with bootstrap intervals and paired differences |
 | 5 | Serving setup and dry run | `p04/serving` | Project 02's trial runner records every trial (video and joints, privately); both policies run through project 02's policy server with early chunk requests; a short dry run on the arm per policy (not counted) shows the queue never empties at chunk boundaries |
-| 6 | Arm evaluation | `p04/eval` | 20 trials each for SmolVLA and ACT S1 under project 01's protocol, both served the same way, in the same session, balanced blocks of 10 (SmolVLA, S1, S1, SmolVLA), every trial recorded |
+| 6 | Arm evaluation | `p04/eval` | A short practice round for SmolVLA at threshold 0.25 and a lighting check first; then 20 trials each for three conditions under project 01's protocol, in one session, in blocks of 10: SmolVLA at threshold 0.5, ACT S1 at 0.5, SmolVLA at 0.25, SmolVLA at 0.25, ACT S1 at 0.5, SmolVLA at 0.5 (60 trials); every trial recorded |
 | 7 | Write-up | `p04/writeup` | README and a results summary match the logs; part 4 of the blog |
 
 ## Definition of done
@@ -29,7 +29,8 @@ Ordered, each one branch and PR. Steps 5 and 6 move the arm.
   - **Success rule, failure types, and re-run rule:** project 01's, unchanged.
   - **The setup:** the same cameras, bowl, toy, task string, and evening lighting, and the same speed cap.
 - **Same session and same serving path:** SmolVLA and ACT S1 run on the same evening, in balanced blocks, both through project 02's policy server with early chunk requests, so the comparison is like for like (project 03's S1 was from another session; ACT's earlier results were in-process or served without early requests).
-- **Reported:** successes out of 20 for each, with 95% intervals and an exact test; by spot; the offline comparison; inference time per chunk; training time and cost.
+- **Two serving settings for SmolVLA, fixed before the session** (added after the step 5 dry run): `chunk_size_threshold` 0.5 (the planned setting, as ACT) and 0.25 (SmolVLA re-decides less often; see `results/serving_dry_run.md`). The main comparison is SmolVLA at 0.5 against ACT at 0.5. SmolVLA at 0.25 against SmolVLA at 0.5 is like for like (only the setting differs); SmolVLA at 0.25 against ACT at 0.5 is not, and is labeled so. ACT is not run at 0.25.
+- **Reported:** successes out of 20 for each condition, with 95% intervals and an exact test for each comparison above; by spot; the offline comparison; inference time per chunk; training time and cost.
 - **No success target.** With 20 trials, only a large difference is meaningful, and the write-up says so.
 
 ## Inputs and outputs
